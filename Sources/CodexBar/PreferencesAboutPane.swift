@@ -75,6 +75,22 @@ struct AboutPane: View {
                         AboutLinkRow(icon: "globe", title: "codexbar.app", url: "https://codexbar.app")
                     }
                 }
+
+                Divider()
+
+                // Fork Maintainer Section
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Fork Maintainer")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        AboutLinkRow(
+                            icon: "chevron.left.slash.chevron.right",
+                            title: "GitHub (Chasonnnn)",
+                            url: "https://github.com/Chasonnnn/CodexBar")
+                        AboutLinkRow(icon: "globe", title: "github.com/Chasonnnn", url: "https://github.com/Chasonnnn")
+                    }
+                }
             }
             .padding(.top, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -96,6 +112,9 @@ struct AboutPane: View {
 
             VStack(spacing: 2) {
                 Text("Originally created by Peter Steinberger")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Text("Enhanced and maintained by Haocheng")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Text("MIT License")
@@ -124,7 +143,7 @@ struct AboutPane: View {
     }
 
     private func openProjectHome() {
-        guard let url = URL(string: "https://github.com/steipete/CodexBar") else { return }
+        guard let url = URL(string: "https://github.com/Chasonnnn/CodexBar") else { return }
         NSWorkspace.shared.open(url)
     }
 }
