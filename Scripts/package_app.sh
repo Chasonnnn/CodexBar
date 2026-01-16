@@ -108,8 +108,12 @@ for ARCH in "${ARCH_LIST[@]}"; do
   swift build -c "$CONF" --arch "$ARCH"
 done
 
-APP="$ROOT/CodexBar.app"
-rm -rf "$APP"
+# Build in /tmp to avoid inheriting xattrs from synced folders like Documents
+TMPAPP="/tmp/CodexBar-build-$$"
+rm -rf "$TMPAPP"
+APP="$TMPAPP/CodexBar.app"
+FINAL_APP="$ROOT/CodexBar.app"
+rm -rf "$FINAL_APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
 mkdir -p "$APP/Contents/Helpers" "$APP/Contents/PlugIns"
 
@@ -306,6 +310,9 @@ fi
 if [[ -d ".build/$CONF/Sparkle.framework" ]]; then
   cp -R ".build/$CONF/Sparkle.framework" "$APP/Contents/Frameworks/"
   chmod -R a+rX "$APP/Contents/Frameworks/Sparkle.framework"
+  # Strip extended attributes immediately to prevent "resource fork" signing failures
+  xattr -cr "$APP/Contents/Frameworks/Sparkle.framework"
+  find "$APP/Contents/Frameworks/Sparkle.framework" -name '._*' -delete
   install_name_tool -add_rpath "@executable_path/../Frameworks" "$APP/Contents/MacOS/CodexBar"
   # Re-sign Sparkle and all nested components with Developer ID + timestamp
   SPARKLE="$APP/Contents/Frameworks/Sparkle.framework"
@@ -391,9 +398,17 @@ if [[ -d "${APP}/Contents/PlugIns/CodexBarWidget.appex" ]]; then
     "$APP/Contents/PlugIns/CodexBarWidget.appex"
 fi
 
+# Strip extended attributes one more time right before final signing
+xattr -cr "$APP"
+find "$APP" -name '._*' -delete
+
 # Finally sign the app bundle itself
 codesign "${CODESIGN_ARGS[@]}" \
   --entitlements "$APP_ENTITLEMENTS" \
   "$APP"
 
-echo "Created $APP"
+# Move the signed app back to project root (ditto preserves signatures but not xattrs)
+ditto "$APP" "$FINAL_APP"
+rm -rf "$TMPAPP"
+
+echo "Created $FINAL_APP"

@@ -63,14 +63,36 @@ struct AboutPane: View {
                     .foregroundStyle(.secondary)
             }
 
-            VStack(alignment: .center, spacing: 10) {
-                AboutLinkRow(
-                    icon: "chevron.left.slash.chevron.right",
-                    title: "GitHub",
-                    url: "https://github.com/steipete/CodexBar")
-                AboutLinkRow(icon: "globe", title: "Website", url: "https://steipete.me")
-                AboutLinkRow(icon: "bird", title: "Twitter", url: "https://twitter.com/steipete")
-                AboutLinkRow(icon: "envelope", title: "Email", url: "mailto:peter@steipete.me")
+            VStack(alignment: .leading, spacing: 12) {
+                // Original Author Section
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Original Author")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        AboutLinkRow(
+                            icon: "chevron.left.slash.chevron.right",
+                            title: "GitHub (steipete)",
+                            url: "https://github.com/steipete/CodexBar")
+                        AboutLinkRow(icon: "globe", title: "codexbar.app", url: "https://codexbar.app")
+                    }
+                }
+
+                Divider()
+
+                // Fork Maintainer Section
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Fork Maintainer")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        AboutLinkRow(
+                            icon: "chevron.left.slash.chevron.right",
+                            title: "GitHub (Chasonnnn)",
+                            url: "https://github.com/Chasonnnn/CodexBar")
+                        AboutLinkRow(icon: "globe", title: "github.com/Chasonnnn", url: "https://github.com/Chasonnnn")
+                    }
+                }
             }
             .padding(.top, 8)
             .frame(maxWidth: .infinity)
@@ -109,10 +131,18 @@ struct AboutPane: View {
                     .foregroundStyle(.secondary)
             }
 
-            Text("© 2025 Peter Steinberger. MIT License.")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .padding(.top, 4)
+            VStack(spacing: 2) {
+                Text("Originally created by Peter Steinberger")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Text("Enhanced and maintained by Haocheng")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Text("MIT License")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.top, 4)
 
             Spacer(minLength: 0)
         }
@@ -147,7 +177,7 @@ struct AboutPane: View {
     }
 
     private func openProjectHome() {
-        guard let url = URL(string: "https://github.com/steipete/CodexBar") else { return }
+        guard let url = URL(string: "https://github.com/Chasonnnn/CodexBar") else { return }
         NSWorkspace.shared.open(url)
     }
 }
