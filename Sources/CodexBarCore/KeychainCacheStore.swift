@@ -29,6 +29,16 @@ public enum KeychainCacheStore {
     private static let cacheLabel = "CodexBar Cache"
     private nonisolated(unsafe) static var globalServiceOverride: String?
     @TaskLocal private static var serviceOverride: String?
+
+    /// Access group matching the app's entitlements to prevent repeated keychain permission prompts.
+    /// Debug builds use a separate group.
+    private static var accessGroup: String {
+        #if DEBUG
+        return "group.com.steipete.codexbar.debug"
+        #else
+        return "group.com.steipete.codexbar"
+        #endif
+    }
     private static let testStoreLock = NSLock()
     private struct TestStoreKey: Hashable {
         let service: String
@@ -50,6 +60,7 @@ public enum KeychainCacheStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: self.serviceName,
             kSecAttrAccount as String: key.account,
+            kSecAttrAccessGroup as String: self.accessGroup,
             kSecMatchLimit as String: kSecMatchLimitOne,
             kSecReturnData as String: true,
         ]
@@ -94,6 +105,7 @@ public enum KeychainCacheStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: self.serviceName,
             kSecAttrAccount as String: key.account,
+            kSecAttrAccessGroup as String: self.accessGroup,
         ]
         let updateAttrs: [String: Any] = [
             kSecValueData as String: data,
@@ -129,6 +141,7 @@ public enum KeychainCacheStore {
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: self.serviceName,
             kSecAttrAccount as String: key.account,
+            kSecAttrAccessGroup as String: self.accessGroup,
         ]
         let status = SecItemDelete(query as CFDictionary)
         if status != errSecSuccess, status != errSecItemNotFound {
