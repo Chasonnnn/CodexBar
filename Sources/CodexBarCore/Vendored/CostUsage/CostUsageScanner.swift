@@ -87,6 +87,12 @@ enum CostUsageScanner {
             return CostUsageDailyReport(data: [], summary: nil)
         case .augment:
             return CostUsageDailyReport(data: [], summary: nil)
+        case .jetbrains:
+            return CostUsageDailyReport(data: [], summary: nil)
+        case .amp:
+            return CostUsageDailyReport(data: [], summary: nil)
+        case .synthetic:
+            return CostUsageDailyReport(data: [], summary: nil)
         }
     }
 

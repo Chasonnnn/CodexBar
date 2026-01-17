@@ -129,10 +129,15 @@ struct ProviderRegistry {
             settings: settings,
             override: tokenOverride,
             fallback: settings.augmentCookieHeader)
+        let ampHeader = Self.manualCookieHeader(
+            provider: .amp,
+            settings: settings,
+            override: tokenOverride,
+            fallback: settings.ampCookieHeader)
         settings.ensureKimiAuthTokenLoaded()
         let kimiHeader = settings.kimiManualCookieHeader
 
-        return ProviderSettingsSnapshot(
+        return ProviderSettingsSnapshot.make(
             debugMenuEnabled: settings.debugMenuEnabled,
             codex: ProviderSettingsSnapshot.CodexProviderSettings(
                 usageDataSource: settings.codexUsageDataSource,
@@ -196,7 +201,16 @@ struct ProviderRegistry {
                     settings: settings,
                     override: tokenOverride,
                     fallback: settings.augmentCookieSource),
-                manualCookieHeader: augmentHeader))
+                manualCookieHeader: augmentHeader),
+            amp: ProviderSettingsSnapshot.AmpProviderSettings(
+                cookieSource: Self.cookieSource(
+                    provider: .amp,
+                    settings: settings,
+                    override: tokenOverride,
+                    fallback: settings.ampCookieSource),
+                manualCookieHeader: ampHeader),
+            jetbrains: ProviderSettingsSnapshot.JetBrainsProviderSettings(
+                ideBasePath: settings.jetbrainsIDEBasePath.isEmpty ? nil : settings.jetbrainsIDEBasePath))
     }
 
     @MainActor

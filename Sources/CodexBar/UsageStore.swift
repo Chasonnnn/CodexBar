@@ -64,6 +64,8 @@ extension UsageStore {
             _ = self.settings.minimaxAPIToken
             _ = self.settings.kimiManualCookieHeader
             _ = self.settings.augmentCookieHeader
+            _ = self.settings.ampCookieSource
+            _ = self.settings.ampCookieHeader
             _ = self.settings.showAllTokenAccountsInMenu
             _ = self.settings.tokenAccountsByProvider
             _ = self.settings.mergeIcons
@@ -306,8 +308,11 @@ final class UsageStore {
         case .vertexai: nil
         case .kiro: self.kiroVersion
         case .augment: nil
+        case .jetbrains: nil
         case .kimi: nil
         case .kimik2: nil
+        case .amp: nil
+        case .synthetic: nil
         }
     }
 
@@ -339,13 +344,37 @@ final class UsageStore {
             (self.isEnabled(.copilot) && self.errors[.copilot] != nil) ||
             (self.isEnabled(.minimax) && self.errors[.minimax] != nil) ||
             (self.isEnabled(.kimi) && self.errors[.kimi] != nil) ||
-            (self.isEnabled(.kimik2) && self.errors[.kimik2] != nil)
+            (self.isEnabled(.kimik2) && self.errors[.kimik2] != nil) ||
+            (self.isEnabled(.synthetic) && self.errors[.synthetic] != nil)
     }
 
     func enabledProviders() -> [UsageProvider] {
         // Use cached enablement to avoid repeated UserDefaults lookups in animation ticks.
         let enabled = self.settings.enabledProvidersOrdered(metadataByProvider: self.providerMetadata)
         return enabled.filter { self.isProviderAvailable($0) }
+    }
+
+    /// Returns the enabled provider with the highest usage percentage (closest to rate limit).
+    /// Excludes providers already at 100% since they're fully rate-limited.
+    func providerWithHighestUsage() -> (provider: UsageProvider, usedPercent: Double)? {
+        var highest: (provider: UsageProvider, usedPercent: Double)?
+        for provider in self.enabledProviders() {
+            guard let snapshot = self.snapshots[provider] else { continue }
+            // Use the same window selection logic as menuBarPercentWindow:
+            // Factory uses secondary (premium) first, others use primary (session) first.
+            let window: RateWindow? = if provider == .factory {
+                snapshot.secondary ?? snapshot.primary
+            } else {
+                snapshot.primary ?? snapshot.secondary
+            }
+            let percent = window?.usedPercent ?? 0
+            // Skip providers already at 100% - they're fully rate-limited
+            guard percent < 100 else { continue }
+            if highest == nil || percent > highest!.usedPercent {
+                highest = (provider, percent)
+            }
+        }
+        return highest
     }
 
     var statusChecksEnabled: Bool {
@@ -419,6 +448,13 @@ final class UsageStore {
             }
             self.settings.ensureZaiAPITokenLoaded()
             return !self.settings.zaiAPIToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        }
+        if provider == .synthetic {
+            if SyntheticSettingsReader.apiKey(environment: ProcessInfo.processInfo.environment) != nil {
+                return true
+            }
+            self.settings.ensureSyntheticAPITokenLoaded()
+            return !self.settings.syntheticAPIToken.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         }
         return true
     }
@@ -1132,6 +1168,13 @@ extension UsageStore {
                 let text = "Z_AI_API_KEY=\(hasAny ? "present" : "missing") source=\(source)"
                 await MainActor.run { self.probeLogs[.zai] = text }
                 return text
+            case .synthetic:
+                let resolution = ProviderTokenResolver.syntheticResolution()
+                let hasAny = resolution != nil
+                let source = resolution?.source.rawValue ?? "none"
+                let text = "SYNTHETIC_API_KEY=\(hasAny ? "present" : "missing") source=\(source)"
+                await MainActor.run { self.probeLogs[.synthetic] = text }
+                return text
             case .gemini:
                 let text = "Gemini debug log not yet implemented"
                 await MainActor.run { self.probeLogs[.gemini] = text }
@@ -1187,6 +1230,16 @@ extension UsageStore {
             case .kimik2:
                 let text = "Kimi K2 debug log not yet implemented"
                 await MainActor.run { self.probeLogs[.kimik2] = text }
+                return text
+            case .amp:
+                let text = await self.debugAmpLog(
+                    ampCookieSource: self.settings.ampCookieSource,
+                    ampCookieHeader: self.settings.ampCookieHeader)
+                await MainActor.run { self.probeLogs[.amp] = text }
+                return text
+            case .jetbrains:
+                let text = "JetBrains AI debug log not yet implemented"
+                await MainActor.run { self.probeLogs[.jetbrains] = text }
                 return text
             }
         }.value
@@ -1328,6 +1381,19 @@ extension UsageStore {
         await self.runWithTimeout(seconds: 15) {
             let probe = AugmentStatusProbe()
             return await probe.debugRawProbe()
+        }
+    }
+
+    private func debugAmpLog(
+        ampCookieSource: ProviderCookieSource,
+        ampCookieHeader: String) async -> String
+    {
+        await self.runWithTimeout(seconds: 15) {
+            let fetcher = AmpUsageFetcher(browserDetection: self.browserDetection)
+            let manualHeader = ampCookieSource == .manual
+                ? CookieHeaderNormalizer.normalize(ampCookieHeader)
+                : nil
+            return await fetcher.debugRawProbe(cookieHeaderOverride: manualHeader)
         }
     }
 

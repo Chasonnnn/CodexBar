@@ -1,6 +1,37 @@
 import Foundation
 
 public struct ProviderSettingsSnapshot: Sendable {
+    public static func make(
+        debugMenuEnabled: Bool = false,
+        codex: CodexProviderSettings? = nil,
+        claude: ClaudeProviderSettings? = nil,
+        cursor: CursorProviderSettings? = nil,
+        opencode: OpenCodeProviderSettings? = nil,
+        factory: FactoryProviderSettings? = nil,
+        minimax: MiniMaxProviderSettings? = nil,
+        zai: ZaiProviderSettings? = nil,
+        copilot: CopilotProviderSettings? = nil,
+        kimi: KimiProviderSettings? = nil,
+        augment: AugmentProviderSettings? = nil,
+        amp: AmpProviderSettings? = nil,
+        jetbrains: JetBrainsProviderSettings? = nil) -> ProviderSettingsSnapshot
+    {
+        ProviderSettingsSnapshot(
+            debugMenuEnabled: debugMenuEnabled,
+            codex: codex,
+            claude: claude,
+            cursor: cursor,
+            opencode: opencode,
+            factory: factory,
+            minimax: minimax,
+            zai: zai,
+            copilot: copilot,
+            kimi: kimi,
+            augment: augment,
+            amp: amp,
+            jetbrains: jetbrains)
+    }
+
     public struct CodexProviderSettings: Sendable {
         public let usageDataSource: CodexUsageDataSource
         public let cookieSource: ProviderCookieSource
@@ -116,6 +147,24 @@ public struct ProviderSettingsSnapshot: Sendable {
         }
     }
 
+    public struct JetBrainsProviderSettings: Sendable {
+        public let ideBasePath: String?
+
+        public init(ideBasePath: String?) {
+            self.ideBasePath = ideBasePath
+        }
+    }
+
+    public struct AmpProviderSettings: Sendable {
+        public let cookieSource: ProviderCookieSource
+        public let manualCookieHeader: String?
+
+        public init(cookieSource: ProviderCookieSource, manualCookieHeader: String?) {
+            self.cookieSource = cookieSource
+            self.manualCookieHeader = manualCookieHeader
+        }
+    }
+
     public let debugMenuEnabled: Bool
     public let codex: CodexProviderSettings?
     public let claude: ClaudeProviderSettings?
@@ -127,6 +176,12 @@ public struct ProviderSettingsSnapshot: Sendable {
     public let copilot: CopilotProviderSettings?
     public let kimi: KimiProviderSettings?
     public let augment: AugmentProviderSettings?
+    public let amp: AmpProviderSettings?
+    public let jetbrains: JetBrainsProviderSettings?
+
+    public var jetbrainsIDEBasePath: String? {
+        self.jetbrains?.ideBasePath
+    }
 
     public init(
         debugMenuEnabled: Bool,
@@ -139,7 +194,9 @@ public struct ProviderSettingsSnapshot: Sendable {
         zai: ZaiProviderSettings?,
         copilot: CopilotProviderSettings?,
         kimi: KimiProviderSettings?,
-        augment: AugmentProviderSettings?)
+        augment: AugmentProviderSettings?,
+        amp: AmpProviderSettings?,
+        jetbrains: JetBrainsProviderSettings? = nil)
     {
         self.debugMenuEnabled = debugMenuEnabled
         self.codex = codex
@@ -152,5 +209,7 @@ public struct ProviderSettingsSnapshot: Sendable {
         self.copilot = copilot
         self.kimi = kimi
         self.augment = augment
+        self.amp = amp
+        self.jetbrains = jetbrains
     }
 }
