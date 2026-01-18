@@ -93,8 +93,8 @@ struct AboutPane: View {
                 }
             }
             .padding(.top, 8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 20)
+            .frame(maxWidth: .infinity)
+            .multilineTextAlignment(.center)
 
             Divider()
 

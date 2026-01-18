@@ -28,15 +28,29 @@
 - Gemini: honor loadCodeAssist project IDs for quota + support Nix CLI layout (#184). Thanks @HaukeSchnau!
 - Codex/Claude/Cursor/Factory/MiniMax: cookie sources now include Manual (paste a Cookie header) in addition to Automatic.
 - Codex/Claude/Cursor/Factory/MiniMax: skip cookie imports from browsers without usable cookie stores (profile/cookie DB) to avoid unnecessary Keychain prompts.
+- Providers: suppress repeated Chromium Keychain prompts after access denied and honor disabled Keychain access.
 - Claude: fix OAuth “Extra usage” spend/limit units when the API returns minor currency units (#97).
 - Claude: rescale extra usage costs when plan hints are missing and prefer web plan hints for extras (#181). Thanks @jorda0mega!
 - Usage formatting: fix currency parsing/formatting on non-US locales (e.g., pt-BR). Thanks @mneves75!
 
 ### Preferences & UI
+- Preferences: swap provider refresh button and enable toggle order.
+- Preferences: animate settings width and widen Providers on selection.
+- Preferences: shrink default settings size and reduce overall height.
+- Preferences: move “Hide personal information” to Advanced.
+- Providers: shorten fetch subtitle to relative time only.
+- Preferences: soften provider sidebar background and stabilize drag reordering.
+- Preferences: restrict provider drag handle to handle-only.
+- Menu: avoid single-letter wraps in provider switcher titles.
+- Menu bar: rebuild provider status items on reorder so icons update correctly.
+- Preferences: move provider refresh timing to a dedicated second line.
+- Menu: widen provider switcher buttons to avoid clipped titles.
+- Preferences: tighten provider usage metrics spacing.
+- Preferences: show refresh timing inline in provider detail subtitle.
 - Preferences: move “Access OpenAI via web” into Providers → Codex.
 - Preferences: add usage source pickers for Codex + Claude with auto fallback.
 - Preferences: add cookie source pickers with contextual helper text for the selected mode.
-- Preferences: add debug switch to disable Keychain access and hide cookie-based web options.
+- Preferences: move “Disable Keychain access” to Advanced and require manual cookies when enabled.
 - Preferences: add per-provider menu bar metric picker (#185) — thanks @HaukeSchnau
 - Menu bar: optional auto-select provider closest to its rate limit and keep switcher progress visible (#159). Thanks @phillco!
 - Preferences: tighten provider rows (inline pickers, compact layout, inline refresh + auto-source status).
@@ -57,6 +71,10 @@
 ### CLI
 - CLI: respect the reset time display setting.
 - CLI: add pink accents, usage bars, and weekly pace lines to text output.
+- CLI: add config-backed provider settings, `--json-only`, and `--source api` for key-based providers.
+- CLI: add `config validate`/`config dump` commands and per-provider JSON error payloads.
+- CLI/App: move provider secrets + ordering to `~/.codexbar/config.json` (no Keychain persistence).
+- Providers: resolve API tokens from config/env only (no Keychain fallback).
 
 ### Dev & Tests
 - Dev: move Chromium profile discovery into SweetCookieKit (adds Helium net.imput.helium). Thanks @hhushhas!
@@ -67,6 +85,7 @@
 - Tests: stabilize Claude PTY integration cleanup and reset CLI sessions after probes.
 - Tests: kill leaked codex app-server after tests.
 - Tests: add regression coverage for merged loading icon layout stability.
+- Tests: cover config validation and JSON-only CLI errors.
 - Build: stabilize Swift test runtime.
 
 ## 0.17.0 — 2025-12-31

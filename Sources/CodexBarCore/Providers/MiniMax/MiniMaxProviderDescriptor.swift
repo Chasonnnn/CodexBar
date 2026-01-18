@@ -32,7 +32,7 @@ public enum MiniMaxProviderDescriptor {
                 supportsTokenCost: false,
                 noDataMessage: { "MiniMax cost summary is not supported." }),
             fetchPlan: ProviderFetchPlan(
-                sourceModes: [.auto, .web],
+                sourceModes: [.auto, .web, .api],
                 pipeline: ProviderFetchPipeline(resolveStrategies: self.resolveStrategies)),
             cli: ProviderCLIConfig(
                 name: "minimax",
@@ -41,11 +41,26 @@ public enum MiniMaxProviderDescriptor {
     }
 
     private static func resolveStrategies(context: ProviderFetchContext) async -> [any ProviderFetchStrategy] {
+        switch context.sourceMode {
+        case .web:
+            return [MiniMaxCodingPlanFetchStrategy()]
+        case .api:
+            return [MiniMaxAPIFetchStrategy()]
+        case .cli, .oauth:
+            return []
+        case .auto:
+            break
+        }
+        let apiToken = ProviderTokenResolver.minimaxToken(environment: context.env)
+        let apiKeyKind = MiniMaxAPISettingsReader.apiKeyKind(token: apiToken)
         let authMode = MiniMaxAuthMode.resolve(
-            apiToken: ProviderTokenResolver.minimaxToken(environment: context.env),
+            apiToken: apiToken,
             cookieHeader: ProviderTokenResolver.minimaxCookie(environment: context.env))
         if authMode.usesAPIToken {
-            return [MiniMaxAPIFetchStrategy()]
+            if apiKeyKind == .standard {
+                return [MiniMaxCodingPlanFetchStrategy()]
+            }
+            return [MiniMaxAPIFetchStrategy(), MiniMaxCodingPlanFetchStrategy()]
         }
         return [MiniMaxCodingPlanFetchStrategy()]
     }
@@ -59,6 +74,11 @@ struct MiniMaxAPIFetchStrategy: ProviderFetchStrategy {
         let authMode = MiniMaxAuthMode.resolve(
             apiToken: ProviderTokenResolver.minimaxToken(environment: context.env),
             cookieHeader: ProviderTokenResolver.minimaxCookie(environment: context.env))
+        if let kind = MiniMaxAPISettingsReader.apiKeyKind(environment: context.env),
+           kind == .standard
+        {
+            return false
+        }
         return authMode.usesAPIToken
     }
 
@@ -72,8 +92,16 @@ struct MiniMaxAPIFetchStrategy: ProviderFetchStrategy {
             sourceLabel: "api")
     }
 
-    func shouldFallback(on _: Error, context _: ProviderFetchContext) -> Bool {
-        false
+    func shouldFallback(on error: Error, context _: ProviderFetchContext) -> Bool {
+        guard let minimaxError = error as? MiniMaxUsageError else { return false }
+        switch minimaxError {
+        case .invalidCredentials:
+            return true
+        case let .apiError(message):
+            return message.contains("HTTP 404")
+        case .networkError, .parseFailed:
+            return false
+        }
     }
 }
 
@@ -83,12 +111,6 @@ struct MiniMaxCodingPlanFetchStrategy: ProviderFetchStrategy {
     private static let log = CodexBarLog.logger("minimax-web")
 
     func isAvailable(_ context: ProviderFetchContext) async -> Bool {
-        let authMode = MiniMaxAuthMode.resolve(
-            apiToken: ProviderTokenResolver.minimaxToken(environment: context.env),
-            cookieHeader: ProviderTokenResolver.minimaxCookie(environment: context.env))
-        if authMode.usesAPIToken {
-            return false
-        }
         if Self.resolveCookieOverride(context: context) != nil {
             return true
         }
