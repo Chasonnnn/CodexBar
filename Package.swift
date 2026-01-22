@@ -21,7 +21,7 @@ let package = Package(
         .package(url: "https://github.com/steipete/Commander", from: "0.2.1"),
         .package(url: "https://github.com/apple/swift-log", from: "1.9.1"),
         .package(url: "https://github.com/apple/swift-syntax", from: "600.0.1"),
-        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", from: "2.4.0"),
+        .package(url: "https://github.com/sindresorhus/KeyboardShortcuts", exact: "1.9.0"),
         sweetCookieKitDependency,
     ],
     targets: {
