@@ -1,5 +1,6 @@
 import CodexBarCore
 import Foundation
+import Observation
 import Testing
 @testable import CodexBar
 
@@ -143,6 +144,51 @@ struct SettingsStoreTests {
     }
 
     @Test
+    @MainActor
+    func applyExternalConfigDoesNotBroadcast() {
+        let suite = "SettingsStoreTests-external-config"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let configStore = testConfigStore(suiteName: suite)
+        let store = SettingsStore(
+            userDefaults: defaults,
+            configStore: configStore,
+            zaiTokenStore: NoopZaiTokenStore(),
+            syntheticTokenStore: NoopSyntheticTokenStore())
+
+        final class NotificationCounter: @unchecked Sendable {
+            private let lock = NSLock()
+            private var value = 0
+
+            func increment() {
+                self.lock.lock()
+                self.value += 1
+                self.lock.unlock()
+            }
+
+            func get() -> Int {
+                self.lock.lock()
+                defer { self.lock.unlock() }
+                return self.value
+            }
+        }
+
+        let notifications = NotificationCounter()
+        let token = NotificationCenter.default.addObserver(
+            forName: .codexbarProviderConfigDidChange,
+            object: store,
+            queue: .main)
+        { _ in
+            notifications.increment()
+        }
+        defer { NotificationCenter.default.removeObserver(token) }
+
+        store.applyExternalConfig(store.configSnapshot, reason: "test-external")
+
+        #expect(notifications.get() == 0)
+    }
+
+    @Test
     func persistsZaiAPIRegionAcrossInstances() {
         let suite = "SettingsStoreTests-zai-region"
         let defaultsA = UserDefaults(suiteName: suite)!
@@ -191,6 +237,7 @@ struct SettingsStoreTests {
         let suite = "SettingsStoreTests-openai-web"
         let defaults = UserDefaults(suiteName: suite)!
         defaults.removePersistentDomain(forName: suite)
+        defaults.set(false, forKey: "debugDisableKeychainAccess")
         let configStore = testConfigStore(suiteName: suite)
 
         let store = SettingsStore(
@@ -202,6 +249,64 @@ struct SettingsStoreTests {
         #expect(store.openAIWebAccessEnabled == true)
         #expect(defaults.bool(forKey: "openAIWebAccessEnabled") == true)
         #expect(store.codexCookieSource == .auto)
+    }
+
+    @Test
+    func menuObservationTokenUpdatesOnDefaultsChange() async {
+        let suite = "SettingsStoreTests-observation-defaults"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let configStore = testConfigStore(suiteName: suite)
+
+        let store = SettingsStore(
+            userDefaults: defaults,
+            configStore: configStore,
+            zaiTokenStore: NoopZaiTokenStore(),
+            syntheticTokenStore: NoopSyntheticTokenStore())
+
+        var didChange = false
+
+        withObservationTracking {
+            _ = store.menuObservationToken
+        } onChange: {
+            Task { @MainActor in
+                didChange = true
+            }
+        }
+
+        store.statusChecksEnabled.toggle()
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(didChange == true)
+    }
+
+    @Test
+    func configBackedSettingsTriggerObservation() async {
+        let suite = "SettingsStoreTests-observation-config"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.removePersistentDomain(forName: suite)
+        let configStore = testConfigStore(suiteName: suite)
+
+        let store = SettingsStore(
+            userDefaults: defaults,
+            configStore: configStore,
+            zaiTokenStore: NoopZaiTokenStore(),
+            syntheticTokenStore: NoopSyntheticTokenStore())
+
+        var didChange = false
+
+        withObservationTracking {
+            _ = store.codexCookieSource
+        } onChange: {
+            Task { @MainActor in
+                didChange = true
+            }
+        }
+
+        store.codexCookieSource = .manual
+        try? await Task.sleep(nanoseconds: 50_000_000)
+
+        #expect(didChange == true)
     }
 
     @Test

@@ -6,6 +6,11 @@ import Testing
 @MainActor
 @Suite
 struct StatusMenuTests {
+    private func disableMenuCardsForTesting() {
+        StatusItemController.menuCardRenderingEnabled = false
+        StatusItemController.menuRefreshEnabled = false
+    }
+
     private func makeSettings() -> SettingsStore {
         let suite = "StatusMenuTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
@@ -20,6 +25,7 @@ struct StatusMenuTests {
 
     @Test
     func remembersProviderWhenMenuOpens() {
+        self.disableMenuCardsForTesting()
         let settings = self.makeSettings()
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
@@ -43,7 +49,8 @@ struct StatusMenuTests {
             settings: settings,
             account: fetcher.loadAccountInfo(),
             updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection())
+            preferencesSelection: PreferencesSelection(),
+            statusBar: NSStatusBar())
 
         let claudeMenu = controller.makeMenu()
         controller.menuWillOpen(claudeMenu)
@@ -61,7 +68,47 @@ struct StatusMenuTests {
     }
 
     @Test
+    func providerToggleUpdatesStatusItemVisibility() {
+        self.disableMenuCardsForTesting()
+        let settings = self.makeSettings()
+        settings.statusChecksEnabled = false
+        settings.refreshFrequency = .manual
+        settings.mergeIcons = false
+        settings.providerDetectionCompleted = true
+
+        let registry = ProviderRegistry.shared
+        if let codexMeta = registry.metadata[.codex] {
+            settings.setProviderEnabled(provider: .codex, metadata: codexMeta, enabled: true)
+        }
+        if let claudeMeta = registry.metadata[.claude] {
+            settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: true)
+        }
+        if let geminiMeta = registry.metadata[.gemini] {
+            settings.setProviderEnabled(provider: .gemini, metadata: geminiMeta, enabled: false)
+        }
+
+        let fetcher = UsageFetcher()
+        let store = UsageStore(fetcher: fetcher, browserDetection: BrowserDetection(cacheTTL: 0), settings: settings)
+        let controller = StatusItemController(
+            store: store,
+            settings: settings,
+            account: fetcher.loadAccountInfo(),
+            updater: DisabledUpdaterController(),
+            preferencesSelection: PreferencesSelection(),
+            statusBar: NSStatusBar())
+
+        #expect(controller.statusItems[.claude]?.isVisible == true)
+
+        if let claudeMeta = registry.metadata[.claude] {
+            settings.setProviderEnabled(provider: .claude, metadata: claudeMeta, enabled: false)
+        }
+        controller.handleProviderConfigChange(reason: "test")
+        #expect(controller.statusItems[.claude]?.isVisible == false)
+    }
+
+    @Test
     func hidesOpenAIWebSubmenusWhenNoHistory() {
+        self.disableMenuCardsForTesting()
         let settings = self.makeSettings()
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
@@ -95,7 +142,8 @@ struct StatusMenuTests {
             settings: settings,
             account: fetcher.loadAccountInfo(),
             updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection())
+            preferencesSelection: PreferencesSelection(),
+            statusBar: NSStatusBar())
 
         let menu = controller.makeMenu()
         controller.menuWillOpen(menu)
@@ -106,6 +154,7 @@ struct StatusMenuTests {
 
     @Test
     func showsOpenAIWebSubmenusWhenHistoryExists() {
+        self.disableMenuCardsForTesting()
         let settings = SettingsStore(
             configStore: testConfigStore(suiteName: "StatusMenuTests-history"),
             zaiTokenStore: NoopZaiTokenStore(),
@@ -154,7 +203,8 @@ struct StatusMenuTests {
             settings: settings,
             account: fetcher.loadAccountInfo(),
             updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection())
+            preferencesSelection: PreferencesSelection(),
+            statusBar: NSStatusBar())
 
         let menu = controller.makeMenu()
         controller.menuWillOpen(menu)
@@ -170,6 +220,7 @@ struct StatusMenuTests {
 
     @Test
     func showsCreditsBeforeCostInCodexMenuCardSections() {
+        self.disableMenuCardsForTesting()
         let settings = self.makeSettings()
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
@@ -221,7 +272,8 @@ struct StatusMenuTests {
             settings: settings,
             account: fetcher.loadAccountInfo(),
             updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection())
+            preferencesSelection: PreferencesSelection(),
+            statusBar: NSStatusBar())
 
         let menu = controller.makeMenu()
         controller.menuWillOpen(menu)
@@ -235,6 +287,7 @@ struct StatusMenuTests {
 
     @Test
     func showsExtraUsageForClaudeWhenUsingMenuCardSections() {
+        self.disableMenuCardsForTesting()
         let settings = self.makeSettings()
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
@@ -297,7 +350,8 @@ struct StatusMenuTests {
             settings: settings,
             account: fetcher.loadAccountInfo(),
             updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection())
+            preferencesSelection: PreferencesSelection(),
+            statusBar: NSStatusBar())
 
         let menu = controller.makeMenu()
         controller.menuWillOpen(menu)
@@ -307,6 +361,7 @@ struct StatusMenuTests {
 
     @Test
     func showsVertexCostWhenUsageErrorPresent() {
+        self.disableMenuCardsForTesting()
         let settings = self.makeSettings()
         settings.statusChecksEnabled = false
         settings.refreshFrequency = .manual
@@ -350,7 +405,8 @@ struct StatusMenuTests {
             settings: settings,
             account: fetcher.loadAccountInfo(),
             updater: DisabledUpdaterController(),
-            preferencesSelection: PreferencesSelection())
+            preferencesSelection: PreferencesSelection(),
+            statusBar: NSStatusBar())
 
         let menu = controller.makeMenu()
         controller.menuWillOpen(menu)

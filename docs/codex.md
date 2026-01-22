@@ -75,6 +75,7 @@ Usage source picker:
 
 ### Codex CLI PTY fallback (`/status`)
 - Runs `codex` in a PTY via `TTYCommandRunner`.
+- Default behavior: exit after each probe; Debug → "Keep CLI sessions alive" keeps it running between probes.
 - Sends `/status`, parses the rendered screen:
   - `Credits:` line
   - `5h limit` line → percent + reset text
@@ -96,7 +97,8 @@ Usage source picker:
 ## Cost usage (local log scan)
 - Source files:
   - `~/.codex/sessions/YYYY/MM/DD/*.jsonl`
-  - Or `$CODEX_HOME/sessions/...` if `CODEX_HOME` is set.
+  - `~/.codex/archived_sessions/*.jsonl` (flat; date inferred from filename when present)
+  - Or `$CODEX_HOME/sessions/...` + `$CODEX_HOME/archived_sessions/...` if `CODEX_HOME` is set.
 - Scanner:
   - Parses `event_msg` token_count entries and `turn_context` model markers.
   - Computes input/cached/output token deltas and per-model cost.

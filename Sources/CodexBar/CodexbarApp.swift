@@ -16,11 +16,25 @@ struct CodexBarApp: App {
 
     init() {
         let env = ProcessInfo.processInfo.environment
-        let level = CodexBarLog.parseLevel(env["CODEXBAR_LOG_LEVEL"]) ?? .info
+        let storedLevel = CodexBarLog.parseLevel(UserDefaults.standard.string(forKey: "debugLogLevel")) ?? .verbose
+        let level = CodexBarLog.parseLevel(env["CODEXBAR_LOG_LEVEL"]) ?? storedLevel
         CodexBarLog.bootstrapIfNeeded(.init(
             destination: .oslog(subsystem: "com.steipete.codexbar"),
             level: level,
             json: false))
+
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "unknown"
+        let gitCommit = Bundle.main.object(forInfoDictionaryKey: "CodexGitCommit") as? String ?? "unknown"
+        let buildTimestamp = Bundle.main.object(forInfoDictionaryKey: "CodexBuildTimestamp") as? String ?? "unknown"
+        CodexBarLog.logger(LogCategories.app).info(
+            "CodexBar starting",
+            metadata: [
+                "version": version,
+                "build": build,
+                "git": gitCommit,
+                "built": buildTimestamp,
+            ])
 
         KeychainAccessGate.isDisabled = UserDefaults.standard.bool(forKey: "debugDisableKeychainAccess")
         KeychainPromptCoordinator.install()
@@ -35,6 +49,7 @@ struct CodexBarApp: App {
         _settings = State(wrappedValue: settings)
         _store = State(wrappedValue: store)
         self.account = account
+        CodexBarLog.setLogLevel(settings.debugLogLevel)
         self.appDelegate.configure(
             store: store,
             settings: settings,
@@ -180,6 +195,10 @@ final class SparkleUpdaterController: NSObject, UpdaterProviding, SPUUpdaterDele
             }
         }
     }
+
+    nonisolated func allowedChannels(for updater: SPUUpdater) -> Set<String> {
+        UpdateChannel.current.allowedSparkleChannels
+    }
 }
 
 private func isDeveloperIDSigned(bundleURL: URL) -> Bool {
@@ -244,6 +263,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.preferencesSelection = selection
     }
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        self.configureAppIconForMacOSVersion()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppNotifications.shared.requestAuthorizationOnStartup()
         self.ensureStatusController()
@@ -252,6 +275,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.statusController?.openMenuFromShortcut()
             }
         }
+    }
+
+    /// Use the classic (non-Liquid Glass) app icon on macOS versions before 26.
+    private func configureAppIconForMacOSVersion() {
+        if #unavailable(macOS 26) {
+            self.applyClassicAppIcon()
+        }
+    }
+
+    private func applyClassicAppIcon() {
+        guard let classicIcon = Self.loadClassicIcon() else { return }
+        NSApp.applicationIconImage = classicIcon
+    }
+
+    private static func loadClassicIcon() -> NSImage? {
+        guard let url = self.classicIconURL(),
+              let image = NSImage(contentsOf: url)
+        else {
+            return nil
+        }
+        return image
+    }
+
+    private static func classicIconURL() -> URL? {
+        Bundle.main.url(forResource: "Icon-classic", withExtension: "icns")
     }
 
     private func ensureStatusController() {
@@ -268,6 +316,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         // Defensive fallback: this should not be hit in normal app lifecycle.
+        CodexBarLog.logger(LogCategories.app)
+            .error("StatusItemController fallback path used; settings/store mismatch likely.")
+        assertionFailure("StatusItemController fallback path used; check app lifecycle wiring.")
         let fallbackSettings = SettingsStore()
         let fetcher = UsageFetcher()
         let browserDetection = BrowserDetection(cacheTTL: BrowserDetection.defaultCacheTTL)

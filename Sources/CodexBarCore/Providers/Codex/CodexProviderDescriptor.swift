@@ -77,12 +77,14 @@ public enum CodexProviderDescriptor {
     private static func noDataMessage() -> String {
         let fm = FileManager.default
         let home = fm.homeDirectoryForCurrentUser.path
-        let root = ProcessInfo.processInfo.environment["CODEX_HOME"].flatMap { raw -> String? in
+        let base = ProcessInfo.processInfo.environment["CODEX_HOME"].flatMap { raw -> String? in
             let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else { return nil }
-            return "\(trimmed)/sessions"
-        } ?? "\(home)/.codex/sessions"
-        return "No Codex sessions found in \(root)."
+            return trimmed
+        } ?? "\(home)/.codex"
+        let sessions = "\(base)/sessions"
+        let archived = "\(base)/archived_sessions"
+        return "No Codex sessions found in \(sessions) or \(archived)."
     }
 
     public static func resolveUsageStrategy(
@@ -110,8 +112,11 @@ struct CodexCLIUsageStrategy: ProviderFetchStrategy {
     func isAvailable(_: ProviderFetchContext) async -> Bool { true }
 
     func fetch(_ context: ProviderFetchContext) async throws -> ProviderFetchResult {
-        let usage = try await context.fetcher.loadLatestUsage()
-        let credits = await context.includeCredits ? (try? context.fetcher.loadLatestCredits()) : nil
+        let keepAlive = context.settings?.debugKeepCLISessionsAlive ?? false
+        let usage = try await context.fetcher.loadLatestUsage(keepCLISessionsAlive: keepAlive)
+        let credits = await context.includeCredits
+            ? (try? context.fetcher.loadLatestCredits(keepCLISessionsAlive: keepAlive))
+            : nil
         return self.makeResult(
             usage: usage,
             credits: credits,

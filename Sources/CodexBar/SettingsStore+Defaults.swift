@@ -38,6 +38,39 @@ extension SettingsStore {
         }
     }
 
+    var debugFileLoggingEnabled: Bool {
+        get { self.defaultsState.debugFileLoggingEnabled }
+        set {
+            self.defaultsState.debugFileLoggingEnabled = newValue
+            self.userDefaults.set(newValue, forKey: "debugFileLoggingEnabled")
+            CodexBarLog.setFileLoggingEnabled(newValue)
+        }
+    }
+
+    var debugLogLevel: CodexBarLog.Level {
+        get {
+            let raw = self.defaultsState.debugLogLevelRaw
+            return CodexBarLog.parseLevel(raw) ?? .verbose
+        }
+        set {
+            self.defaultsState.debugLogLevelRaw = newValue.rawValue
+            self.userDefaults.set(newValue.rawValue, forKey: "debugLogLevel")
+            CodexBarLog.setLogLevel(newValue)
+        }
+    }
+
+    var debugKeepCLISessionsAlive: Bool {
+        get { self.defaultsState.debugKeepCLISessionsAlive }
+        set {
+            self.defaultsState.debugKeepCLISessionsAlive = newValue
+            self.userDefaults.set(newValue, forKey: "debugKeepCLISessionsAlive")
+        }
+    }
+
+    var isVerboseLoggingEnabled: Bool {
+        self.debugLogLevel.rank <= CodexBarLog.Level.verbose.rank
+    }
+
     private var debugLoadingPatternRaw: String? {
         get { self.defaultsState.debugLoadingPatternRaw }
         set {
@@ -165,6 +198,9 @@ extension SettingsStore {
         set {
             self.defaultsState.claudeWebExtrasEnabledRaw = newValue
             self.userDefaults.set(newValue, forKey: "claudeWebExtrasEnabled")
+            CodexBarLog.logger(LogCategories.settings).info(
+                "Claude web extras updated",
+                metadata: ["enabled": newValue ? "1" : "0"])
         }
     }
 
@@ -181,6 +217,9 @@ extension SettingsStore {
         set {
             self.defaultsState.openAIWebAccessEnabled = newValue
             self.userDefaults.set(newValue, forKey: "openAIWebAccessEnabled")
+            CodexBarLog.logger(LogCategories.settings).info(
+                "OpenAI web access updated",
+                metadata: ["enabled": newValue ? "1" : "0"])
         }
     }
 

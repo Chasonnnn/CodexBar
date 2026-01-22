@@ -6,6 +6,7 @@ import SwiftUI
 struct DebugPane: View {
     @Bindable var settings: SettingsStore
     @Bindable var store: UsageStore
+    @AppStorage("debugFileLoggingEnabled") private var debugFileLoggingEnabled = false
     @State private var currentLogProvider: UsageProvider = .codex
     @State private var currentFetchProvider: UsageProvider = .codex
     @State private var isLoadingLog = false
@@ -25,6 +26,44 @@ struct DebugPane: View {
     var body: some View {
         ScrollView(.vertical, showsIndicators: true) {
             VStack(alignment: .leading, spacing: 20) {
+                SettingsSection(title: "Logging") {
+                    PreferenceToggleRow(
+                        title: "Enable file logging",
+                        subtitle: "Write logs to \(self.fileLogPath) for debugging.",
+                        binding: self.$debugFileLoggingEnabled)
+                        .onChange(of: self.debugFileLoggingEnabled) { _, newValue in
+                            if self.settings.debugFileLoggingEnabled != newValue {
+                                self.settings.debugFileLoggingEnabled = newValue
+                            }
+                        }
+
+                    HStack(alignment: .center, spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Verbosity")
+                                .font(.body)
+                            Text("Controls how much detail is logged.")
+                                .font(.footnote)
+                                .foregroundStyle(.tertiary)
+                        }
+                        Spacer()
+                        Picker("Verbosity", selection: self.$settings.debugLogLevel) {
+                            ForEach(CodexBarLog.Level.allCases) { level in
+                                Text(level.displayName).tag(level)
+                            }
+                        }
+                        .labelsHidden()
+                        .pickerStyle(.menu)
+                        .frame(maxWidth: 160)
+                    }
+
+                    Button {
+                        NSWorkspace.shared.open(CodexBarLog.fileLogURL)
+                    } label: {
+                        Label("Open log file", systemImage: "doc.text.magnifyingglass")
+                    }
+                    .controlSize(.small)
+                }
+
                 SettingsSection {
                     PreferenceToggleRow(
                         title: "Force animation on next refresh",
@@ -229,6 +268,25 @@ struct DebugPane: View {
                     }
                 }
 
+                SettingsSection(
+                    title: "CLI sessions",
+                    caption: "Keep Codex/Claude CLI sessions alive after a probe. Default exits once data is captured.")
+                {
+                    PreferenceToggleRow(
+                        title: "Keep CLI sessions alive",
+                        subtitle: "Skip teardown between probes (debug-only).",
+                        binding: self.$settings.debugKeepCLISessionsAlive)
+
+                    Button {
+                        Task {
+                            await CLIProbeSessionResetter.resetAll()
+                        }
+                    } label: {
+                        Label("Reset CLI sessions", systemImage: "arrow.counterclockwise")
+                    }
+                    .controlSize(.small)
+                }
+
                 #if DEBUG
                 SettingsSection(
                     title: "Error simulation",
@@ -336,6 +394,10 @@ struct DebugPane: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
         }
+    }
+
+    private var fileLogPath: String {
+        CodexBarLog.fileLogURL.path
     }
 
     private var animationPatternBinding: Binding<LoadingPattern?> {
