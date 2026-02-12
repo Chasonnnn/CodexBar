@@ -395,10 +395,18 @@ final class UsageStore {
     }
 
     func isProviderAvailable(_ provider: UsageProvider) -> Bool {
+        // Availability should mirror the effective fetch environment, including token-account overrides.
+        // Otherwise providers (notably token-account-backed API providers) can fetch successfully but be
+        // hidden from the menu because their credentials are not in ProcessInfo's environment.
+        let environment = ProviderRegistry.makeEnvironment(
+            base: ProcessInfo.processInfo.environment,
+            provider: provider,
+            settings: self.settings,
+            tokenOverride: nil)
         let context = ProviderAvailabilityContext(
             provider: provider,
             settings: self.settings,
-            environment: ProcessInfo.processInfo.environment)
+            environment: environment)
         return ProviderCatalog.implementation(for: provider)?
             .isAvailable(context: context)
             ?? true
@@ -1229,6 +1237,13 @@ extension UsageStore {
                 let text = "JetBrains AI debug log not yet implemented"
                 await MainActor.run { self.probeLogs[.jetbrains] = text }
                 return text
+            case .warp:
+                let resolution = ProviderTokenResolver.warpResolution()
+                let hasAny = resolution != nil
+                let source = resolution?.source.rawValue ?? "none"
+                let text = "WARP_API_KEY=\(hasAny ? "present" : "missing") source=\(source)"
+                await MainActor.run { self.probeLogs[.warp] = text }
+                return text
             }
         }.value
     }
@@ -1250,7 +1265,14 @@ extension UsageStore {
             } else {
                 ClaudeWebAPIFetcher.hasSessionKey(browserDetection: self.browserDetection) { msg in lines.append(msg) }
             }
-            let hasOAuthCredentials = (try? ClaudeOAuthCredentialsStore.load()) != nil
+            // Don't prompt for keychain access during debug dump
+            let oauthRecord = try? ClaudeOAuthCredentialsStore.loadRecord(
+                allowKeychainPrompt: false,
+                respectKeychainPromptCooldown: true,
+                allowClaudeKeychainRepairWithoutPrompt: false)
+            let hasOAuthCredentials = oauthRecord?.credentials.scopes.contains("user:profile") == true
+            let hasClaudeBinary = ClaudeOAuthDelegatedRefreshCoordinator.isClaudeCLIAvailable()
+            let delegatedCooldownSeconds = ClaudeOAuthDelegatedRefreshCoordinator.cooldownRemainingSeconds()
 
             let strategy = ClaudeProviderDescriptor.resolveUsageStrategy(
                 selectedDataSource: claudeUsageDataSource,
@@ -1258,9 +1280,23 @@ extension UsageStore {
                 hasWebSession: hasKey,
                 hasOAuthCredentials: hasOAuthCredentials)
 
-            lines.append("strategy=\(strategy.dataSource.rawValue)")
+            if claudeUsageDataSource == .auto {
+                lines.append("pipeline_order=oauth→web→cli")
+                lines.append("auto_heuristic=\(strategy.dataSource.rawValue)")
+            } else {
+                lines.append("strategy=\(strategy.dataSource.rawValue)")
+            }
             lines.append("hasSessionKey=\(hasKey)")
             lines.append("hasOAuthCredentials=\(hasOAuthCredentials)")
+            lines.append("oauthCredentialOwner=\(oauthRecord?.owner.rawValue ?? "none")")
+            lines.append("oauthCredentialSource=\(oauthRecord?.source.rawValue ?? "none")")
+            lines.append("oauthCredentialExpired=\(oauthRecord?.credentials.isExpired ?? false)")
+            lines.append("delegatedRefreshCLIAvailable=\(hasClaudeBinary)")
+            lines.append("delegatedRefreshCooldownActive=\(delegatedCooldownSeconds != nil)")
+            if let delegatedCooldownSeconds {
+                lines.append("delegatedRefreshCooldownSeconds=\(delegatedCooldownSeconds)")
+            }
+            lines.append("hasClaudeBinary=\(hasClaudeBinary)")
             if strategy.useWebExtras {
                 lines.append("web_extras=enabled")
             }
