@@ -1,8 +1,8 @@
 # CodexBar Fork - Current Status
 
-**Last Updated:** January 4, 2026
+**Last Updated:** February 28, 2026
 **Fork Maintainer:** Brandon Charleson
-**Branch:** `feature/augment-integration`
+**Branch:** `main`
 
 ---
 
@@ -11,10 +11,10 @@
 ### Phase 1: Fork Identity & Credits ✓
 
 **Commits:**
-1. `da3d13e` - "feat: establish fork identity with dual attribution"
-2. `745293e` - "docs: add fork roadmap and quick start guide"
-3. `8a87473` - "docs: add fork status tracking document"
-4. `df75ae2` - "feat: comprehensive multi-upstream fork management system"
+1. `f15cadd` - "chore: apply fork customizations on upstream main"
+2. `5bf6f14` - "fix: add keychain access group to prevent permission prompts"
+3. `2055677` - "chore: update Package.resolved for KeyboardShortcuts 1.9.0 pin"
+4. `05758e9` - "fix: manual implementation of menuItemHighlighted EnvironmentKey"
 
 **Changes:**
 - ✅ Updated About section with dual attribution (original + fork)
@@ -45,9 +45,41 @@
 - ✅ `docs/QUOTIO_ANALYSIS.md` - Pattern analysis framework
 - ✅ `docs/FORK_SETUP.md` - One-time setup guide
 
+### Upstream Sync ✓ (February 28, 2026)
+
+**Merge commit:** `a598a89` - "chore: sync 61 upstream commits from steipete/CodexBar"
+
+**61 commits merged from steipete/CodexBar**, including:
+- ✅ Copilot quota fallback improvements (7 commits)
+- ✅ Overview tab / merged switcher (10 commits)
+- ✅ GPT-5.3 Codex pricing
+- ✅ JSONL scanner performance optimizations
+- ✅ TTY command runner hardening
+- ✅ OpenCode null subscription handling
+- ✅ MiniMax CN region fix
+- ✅ Gecko browser case-insensitive profile detection
+- ✅ Many new test suites (CopilotUsageModels, SettingsStore, StatusMenu, etc.)
+- ✅ OpenAI dashboard navigation fixes
+- ✅ OpenRouter improvements
+- ✅ Kimi provider fixes
+- ✅ Codex credits display
+
+**No merge conflicts** — all 60 upstream files integrated cleanly.
+
 ---
 
 ## 🎯 Current State
+
+### Git Remotes
+```
+origin    https://github.com/Chasonnnn/CodexBar.git
+upstream  https://github.com/steipete/CodexBar.git
+```
+
+### Branch Status
+- `main` is **in sync with upstream** (merge commit `a598a89` on top)
+- Fork is 5 commits ahead of upstream (4 fork customizations + 1 sync merge)
+- Fork is pushed to `origin/main` ✅
 
 ### What Works
 - ✅ Fork identity clearly established
@@ -58,10 +90,10 @@
 - ✅ All existing functionality preserved
 - ✅ **Multi-upstream management system operational**
 - ✅ **Automated upstream monitoring configured**
-- ✅ **Quotio analysis framework ready**
+- ✅ **61 upstream commits freshly synced (Feb 28, 2026)**
 
-### Critical Discovery
-- ⚠️ **Upstream (steipete) has REMOVED Augment provider**
+### Critical Discovery (from earlier sync)
+- ⚠️ **Upstream (steipete) had REMOVED Augment provider** at one point
   - 627 lines deleted from `AugmentStatusProbe.swift`
   - 88 lines deleted from `AugmentStatusProbeTests.swift`
   - **This validates our fork strategy!**
@@ -72,39 +104,9 @@
 - ⚠️ Augment cookie disconnection (Phase 2 will address)
 - ⚠️ Debug print statements in AugmentStatusProbe.swift (needs proper logging)
 
-### Uncommitted Changes
-- `Sources/CodexBarCore/Providers/Augment/AugmentStatusProbe.swift` has debug print statements
-  - These should be replaced with proper `CodexBarLog` logging in Phase 2
-  - Currently unstaged to keep commits clean
-
 ---
 
 ## 📋 Next Steps
-
-### URGENT: Upstream Sync Decision
-**Before proceeding with Phase 2, decide on upstream sync strategy:**
-
-1. **Review upstream changes:**
-   ```bash
-   ./Scripts/check_upstreams.sh upstream
-   ./Scripts/review_upstream.sh upstream
-   ```
-
-2. **Decide what to sync:**
-   - ✅ Vertex AI improvements (5 commits)
-   - ✅ SwiftFormat/SwiftLint fixes
-   - ❌ Augment provider removal (SKIP!)
-
-3. **Cherry-pick valuable commits:**
-   ```bash
-   git checkout -b upstream-sync/vertex-improvements
-   git cherry-pick 001019c  # style fixes
-   git cherry-pick e4f1e4c  # vertex token cost
-   git cherry-pick 202efde  # vertex fix
-   git cherry-pick 0c2f888  # vertex docs
-   git cherry-pick 3c4ca30  # vertex tracking
-   # Skip Augment removal commits!
-   ```
 
 ### Immediate (Phase 2)
 1. **Replace debug prints with proper logging**
@@ -134,12 +136,13 @@
 
 ---
 
-## 📁 Key Files Modified
+## 📁 Key Files Modified (Fork-Specific)
 
 ### Source Code
-- `Sources/CodexBar/About.swift` - Dual attribution
-- `Sources/CodexBar/PreferencesAboutPane.swift` - Organized sections
-- `Sources/CodexBarCore/Providers/Augment/AugmentStatusProbe.swift` - Debug prints (unstaged)
+- `Sources/CodexBar/MenuHighlightStyle.swift` - Fork UI tweak
+- `Sources/CodexBar/PreferencesAboutPane.swift` - Dual attribution
+- `Sources/CodexBarCore/KeychainCacheStore.swift` - Keychain access group fix
+- `Package.swift` / `Package.resolved` - Dependency updates
 
 ### Documentation
 - `README.md` - Fork notice and enhancements
@@ -153,93 +156,19 @@
 
 ```bash
 # Current branch
-feature/augment-integration
+main
 
-# Commits ahead of main
-4 commits:
-- da3d13e: Fork identity with dual attribution
-- 745293e: Roadmap and quick start guide
-- 8a87473: Fork status tracking
-- df75ae2: Multi-upstream management system
+# Commits ahead of upstream/main
+5 commits (4 fork customizations + 1 upstream sync merge)
 
-# Uncommitted changes
-M Sources/CodexBarCore/Providers/Augment/AugmentStatusProbe.swift (debug prints)
+# Last sync
+a598a89 — 61 commits from steipete/CodexBar, February 28, 2026
 
-# Git remotes configured
-origin    git@github.com:topoffunnel/CodexBar.git
-upstream  https://github.com/steipete/CodexBar.git (needs to be added)
-quotio    https://github.com/nguyenphutrong/quotio.git (needs to be added)
-```
+# Upstream tip synced to
+855a10f — Handle Gecko default profile detection case-insensitively
 
----
-
-## 🚀 How to Continue
-
-### RECOMMENDED: Setup Multi-Upstream System First
-
-```bash
-# 1. Configure git remotes
-git remote add upstream https://github.com/steipete/CodexBar.git
-git remote add quotio https://github.com/nguyenphutrong/quotio.git
-git fetch --all
-
-# 2. Test automation scripts
-./Scripts/check_upstreams.sh
-
-# 3. Review upstream changes (IMPORTANT!)
-./Scripts/review_upstream.sh upstream
-
-# 4. Decide what to sync
-# See "URGENT: Upstream Sync Decision" section above
-
-# 5. Analyze quotio
-./Scripts/analyze_quotio.sh
-```
-
-### Option 1: Sync Upstream First, Then Phase 2
-```bash
-# Discard debug prints (will redo in Phase 2)
-git checkout Sources/CodexBarCore/Providers/Augment/AugmentStatusProbe.swift
-
-# Sync valuable upstream changes
-git checkout -b upstream-sync/vertex-improvements
-# Cherry-pick commits (see URGENT section)
-
-# Merge to main
-git checkout main
-git merge feature/augment-integration
-git merge upstream-sync/vertex-improvements
-
-# Then start Phase 2
-git checkout -b feature/augment-diagnostics
-```
-
-### Option 2: Phase 2 First, Sync Later
-```bash
-# Keep debug prints and enhance them
-git add Sources/CodexBarCore/Providers/Augment/AugmentStatusProbe.swift
-
-# Continue on current branch
-# Replace print() with CodexBarLog.logger("augment")
-# Complete Phase 2
-# Then sync upstream
-```
-
-### Option 3: Merge Current Work, Setup System
-```bash
-# Discard debug prints
-git checkout Sources/CodexBarCore/Providers/Augment/AugmentStatusProbe.swift
-
-# Merge to main
-git checkout main
-git merge feature/augment-integration
-
-# Setup remotes
-git remote add upstream https://github.com/steipete/CodexBar.git
-git remote add quotio https://github.com/nguyenphutrong/quotio.git
-
-# Start using the system
-./Scripts/check_upstreams.sh
+# Working tree
+clean — nothing to commit
 ```
 
 ---
@@ -253,6 +182,11 @@ git remote add quotio https://github.com/nguyenphutrong/quotio.git
 - [x] Development roadmap
 - [x] Quick start guide
 
+### Upstream Sync ✅ COMPLETE (Feb 28, 2026)
+- [x] 61 commits merged from steipete/CodexBar
+- [x] No conflicts
+- [x] Pushed to origin
+
 ### Phase 2: Enhanced Diagnostics 🔄 READY TO START
 - [ ] Replace print() with CodexBarLog
 - [ ] Enhanced cookie diagnostics
@@ -264,7 +198,7 @@ git remote add quotio https://github.com/nguyenphutrong/quotio.git
 - [ ] Implementation recommendations
 - [ ] Priority ranking
 
-### Phase 4: Upstream Sync 📋 PLANNED
+### Phase 4: Upstream Sync Automation 📋 PLANNED
 - [ ] Sync script
 - [ ] Conflict resolution guide
 - [ ] Automated checks
@@ -295,44 +229,24 @@ git remote add quotio https://github.com/nguyenphutrong/quotio.git
 
 ---
 
-## 📞 Questions & Decisions Needed
-
-### Before Starting Phase 2
-1. **Logging approach:** Keep debug prints and enhance, or start fresh?
-2. **Branch strategy:** Continue on `feature/augment-integration` or create new branch?
-3. **Merge timing:** Merge Phase 1 to main first, or continue with all phases?
-
-### For Phase 3
-1. **Quotio access:** Do you have access to Quotio source code?
-2. **Feature priority:** Which Quotio features are most important?
-3. **Timeline:** How much time to allocate for analysis?
-
-### For Phase 5
-1. **Account limit:** How many accounts per provider?
-2. **UI design:** Menu bar dropdown or separate window?
-3. **Storage:** Keychain per account or shared?
-
----
-
 ## 🔗 Quick Links
 
 - **Roadmap:** `docs/FORK_ROADMAP.md`
 - **Quick Start:** `docs/FORK_QUICK_START.md`
 - **Augment Docs:** `docs/augment.md`
 - **Original Repo:** https://github.com/steipete/CodexBar
-- **Fork Repo:** https://github.com/topoffunnel/CodexBar
+- **Fork Repo:** https://github.com/Chasonnnn/CodexBar
 
 ---
 
 ## 💡 Recommendations
 
-1. **Merge Phase 1 to main** - Establish fork identity as baseline
-2. **Create Phase 2 branch** - `feature/augment-diagnostics`
-3. **Start with logging** - Replace prints with proper CodexBarLog
-4. **Test thoroughly** - Ensure no regressions
-5. **Document as you go** - Update docs with findings
+1. **Review new upstream features** — Copilot fallback, overview tab, and Kimi fixes are significant
+2. **Test the build** after the large sync — `swift build` or open in Xcode
+3. **Start Phase 2** — `feature/augment-diagnostics` branch
+4. **Start with logging** — Replace prints with proper CodexBarLog
+5. **Document as you go** — Update docs with findings
 
 ---
 
 **Ready to proceed with Phase 2?** See `docs/FORK_ROADMAP.md` for detailed tasks.
-
