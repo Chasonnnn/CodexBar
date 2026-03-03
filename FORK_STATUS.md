@@ -1,7 +1,7 @@
 # CodexBar Fork - Current Status
 
-**Last Updated:** February 28, 2026
-**Fork Maintainer:** Brandon Charleson
+**Last Updated:** March 2, 2026
+**Fork Maintainer:** Chasonnnn
 **Branch:** `main`
 
 ---
@@ -66,6 +66,26 @@
 
 **No merge conflicts** — all 60 upstream files integrated cleanly.
 
+### Upstream Sync ✓ (March 2, 2026)
+
+**Merge commit:** `chore: sync 16 upstream commits from steipete/CodexBar`
+
+**16 commits merged from steipete/CodexBar** (`855a10f..982b476`), including:
+- ✅ Add Kilo API mode provider support
+- ✅ Surface actionable Kilo credential errors
+- ✅ Add Kilo CLI source-mode readiness
+- ✅ Implement Kilo usage source modes and fallback behavior
+- ✅ Improve Kilo usage menu detail handling & CLI output parity
+- ✅ Enable Kilo in widget provider selection
+- ✅ Add must-have Kilo regression tests (718+ lines of tests)
+- ✅ Handle Kilo zero-balance credit payload
+- ✅ Refactor Kilo login handling and auto top-up activity detection
+- ✅ Degrade optional Kilo tRPC errors and split activity labels
+- ✅ Fix Kilo provider icon
+- ✅ New docs: `docs/kilo.md`
+
+**No merge conflicts** — all 50 upstream files integrated cleanly (3,771 insertions).
+
 ---
 
 ## 🎯 Current State
@@ -77,8 +97,8 @@ upstream  https://github.com/steipete/CodexBar.git
 ```
 
 ### Branch Status
-- `main` is **in sync with upstream** (merge commit `a598a89` on top)
-- Fork is 5 commits ahead of upstream (4 fork customizations + 1 sync merge)
+- `main` is **in sync with upstream** (merge commit synced to `982b476`)
+- Fork is 8 commits ahead of upstream (fork customizations + 2 sync merges)
 - Fork is pushed to `origin/main` ✅
 
 ### What Works
@@ -90,7 +110,8 @@ upstream  https://github.com/steipete/CodexBar.git
 - ✅ All existing functionality preserved
 - ✅ **Multi-upstream management system operational**
 - ✅ **Automated upstream monitoring configured**
-- ✅ **61 upstream commits freshly synced (Feb 28, 2026)**
+- ✅ **61 upstream commits synced (Feb 28, 2026)**
+- ✅ **16 upstream Kilo provider commits synced (Mar 2, 2026)**
 
 ### Critical Discovery (from earlier sync)
 - ⚠️ **Upstream (steipete) had REMOVED Augment provider** at one point
@@ -159,13 +180,13 @@ upstream  https://github.com/steipete/CodexBar.git
 main
 
 # Commits ahead of upstream/main
-5 commits (4 fork customizations + 1 upstream sync merge)
+8 commits (fork customizations + 2 upstream sync merges)
 
 # Last sync
-a598a89 — 61 commits from steipete/CodexBar, February 28, 2026
+March 2, 2026 — 16 Kilo provider commits from steipete/CodexBar
 
 # Upstream tip synced to
-855a10f — Handle Gecko default profile detection case-insensitively
+982b476 — Fix Kilo provider icon
 
 # Working tree
 clean — nothing to commit
@@ -184,6 +205,11 @@ clean — nothing to commit
 
 ### Upstream Sync ✅ COMPLETE (Feb 28, 2026)
 - [x] 61 commits merged from steipete/CodexBar
+- [x] No conflicts
+- [x] Pushed to origin
+
+### Upstream Sync ✅ COMPLETE (Mar 2, 2026)
+- [x] 16 Kilo provider commits merged from steipete/CodexBar
 - [x] No conflicts
 - [x] Pushed to origin
 
