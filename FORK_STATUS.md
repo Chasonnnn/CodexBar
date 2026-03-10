@@ -1,6 +1,6 @@
 # CodexBar Fork - Current Status
 
-**Last Updated:** March 2, 2026
+**Last Updated:** March 10, 2026
 **Fork Maintainer:** Chasonnnn
 **Branch:** `main`
 
@@ -86,6 +86,41 @@
 
 **No merge conflicts** — all 50 upstream files integrated cleanly (3,771 insertions).
 
+### Upstream Sync ✓ (March 10, 2026)
+
+**Merge commit:** `0601822` - merge upstream/main (14 commits from steipete/CodexBar)
+
+**14 commits merged from steipete/CodexBar** (`982b476..df39246`), including:
+- ✅ Remove redundant extra usage rescale (double-division bug fix)
+- ✅ Fix SwiftFormat lint in ClaudeUsageFetcher
+- ✅ Surface Claude CLI rate limit errors
+- ✅ Use Claude Code user agent for OAuth usage
+- ✅ Harden Codex historical pace and backfill
+- ✅ Avoid Codex account lookup for Claude pace
+- ✅ Gate pace computation by display mode
+- ✅ Split UsageStore support types into separate file
+- ✅ Centralize clamping and harden deterministic test timezones
+- ✅ Move historical tracking toggle to Codex settings
+- ✅ Bound OpenAI WebView timeouts
+- ✅ Handle zero-usage days in backfill
+- ✅ New: `HistoricalUsagePace.swift` (852 lines), `UsageStoreSupport.swift`, `Double+Clamped.swift`
+- ✅ 813+ lines of new historical usage pace tests
+
+**No merge conflicts** — all 39 upstream files integrated cleanly (2,523 insertions).
+
+### Fork Feature: OpenCode Cost Usage Support ✓ (March 10, 2026)
+
+**Commit:** `4f5341e` - "feat: add OpenCode cost usage support"
+
+**18 files changed** (1,002 insertions), including:
+- ✅ `CostUsageScanner+OpenCode.swift` — SQLite-based OpenCode database scanner (NEW)
+- ✅ `CostUsagePricing.swift` — OpenCode model pricing with Claude/OpenAI/Gemini alias normalization (+174 lines)
+- ✅ Wire OpenCode into UsageStore, CostUsageFetcher, CLI, menu card, and preferences
+- ✅ Add `CostSource` enum (native/fallback/mixed) to model breakdowns
+- ✅ Detect OpenCode database as token cost usage source
+- ✅ `OpenCodeCostScannerTests.swift` — comprehensive test suite (NEW)
+- ✅ Additional tests in CostUsagePricingTests, MenuCardModelTests, SettingsStoreAdditionalTests
+
 ---
 
 ## 🎯 Current State
@@ -97,8 +132,8 @@ upstream  https://github.com/steipete/CodexBar.git
 ```
 
 ### Branch Status
-- `main` is **in sync with upstream** (merge commit synced to `982b476`)
-- Fork is 8 commits ahead of upstream (fork customizations + 2 sync merges)
+- `main` is **in sync with upstream** (merge commit synced to `df39246`)
+- Fork is 11 commits ahead of upstream (fork customizations + 3 sync merges + OpenCode feature)
 - Fork is pushed to `origin/main` ✅
 
 ### What Works
@@ -112,6 +147,8 @@ upstream  https://github.com/steipete/CodexBar.git
 - ✅ **Automated upstream monitoring configured**
 - ✅ **61 upstream commits synced (Feb 28, 2026)**
 - ✅ **16 upstream Kilo provider commits synced (Mar 2, 2026)**
+- ✅ **14 upstream commits synced (Mar 10, 2026)**
+- ✅ **OpenCode cost usage feature committed and pushed (Mar 10, 2026)**
 
 ### Critical Discovery (from earlier sync)
 - ⚠️ **Upstream (steipete) had REMOVED Augment provider** at one point
@@ -180,13 +217,13 @@ upstream  https://github.com/steipete/CodexBar.git
 main
 
 # Commits ahead of upstream/main
-8 commits (fork customizations + 2 upstream sync merges)
+11 commits (fork customizations + 3 upstream sync merges + OpenCode feature)
 
 # Last sync
-March 2, 2026 — 16 Kilo provider commits from steipete/CodexBar
+March 10, 2026 — 14 commits from steipete/CodexBar + OpenCode cost usage feature
 
 # Upstream tip synced to
-982b476 — Fix Kilo provider icon
+df39246 — Update CHANGELOG.md
 
 # Working tree
 clean — nothing to commit
@@ -211,6 +248,12 @@ clean — nothing to commit
 ### Upstream Sync ✅ COMPLETE (Mar 2, 2026)
 - [x] 16 Kilo provider commits merged from steipete/CodexBar
 - [x] No conflicts
+- [x] Pushed to origin
+
+### Upstream Sync ✅ COMPLETE (Mar 10, 2026)
+- [x] 14 commits merged from steipete/CodexBar
+- [x] No conflicts
+- [x] OpenCode cost usage feature committed
 - [x] Pushed to origin
 
 ### Phase 2: Enhanced Diagnostics 🔄 READY TO START
