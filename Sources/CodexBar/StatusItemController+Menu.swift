@@ -1377,7 +1377,7 @@ extension StatusItemController {
             dashboardError = self.store.lastOpenAIDashboardError
             tokenSnapshot = self.store.tokenSnapshot(for: target)
             tokenError = self.store.tokenError(for: target)
-        } else if target == .claude || target == .vertexai, snapshotOverride == nil {
+        } else if target == .claude || target == .vertexai || target == .opencode, snapshotOverride == nil {
             credits = nil
             creditsError = nil
             dashboard = nil

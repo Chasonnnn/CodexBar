@@ -1550,11 +1550,17 @@ extension UsageStore {
         self.lastTokenFetchAt.removeAll()
         self.tokenFailureGates[.codex]?.reset()
         self.tokenFailureGates[.claude]?.reset()
+        self.tokenFailureGates[.vertexai]?.reset()
+        self.tokenFailureGates[.opencode]?.reset()
         return nil
     }
 
+    func refreshTokenUsageForProvider(_ provider: UsageProvider, force: Bool = true) async {
+        await self.refreshTokenUsage(provider, force: force)
+    }
+
     private func refreshTokenUsage(_ provider: UsageProvider, force: Bool) async {
-        guard provider == .codex || provider == .claude || provider == .vertexai else {
+        guard provider == .codex || provider == .claude || provider == .vertexai || provider == .opencode else {
             self.tokenSnapshots.removeValue(forKey: provider)
             self.tokenErrors[provider] = nil
             self.tokenFailureGates[provider]?.reset()

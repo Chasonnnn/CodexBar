@@ -711,11 +711,16 @@ extension UsageMenuCardView.Model {
             snapshot: input.tokenSnapshot,
             error: input.tokenError)
         let subtitle = Self.subtitle(
+            provider: input.provider,
             snapshot: input.snapshot,
+            tokenSnapshot: input.tokenSnapshot,
             isRefreshing: input.isRefreshing,
             lastError: input.lastError)
         let redacted = Self.redactedText(input: input, subtitle: subtitle)
-        let placeholder = input.snapshot == nil && !input.isRefreshing && input.lastError == nil ? "No usage yet" : nil
+        let placeholder = input.snapshot == nil
+            && !input.isRefreshing
+            && subtitle.style != .error
+            && tokenUsage == nil ? "No usage yet" : nil
 
         return UsageMenuCardView.Model(
             provider: input.provider,
@@ -839,20 +844,31 @@ extension UsageMenuCardView.Model {
     }
 
     private static func subtitle(
+        provider: UsageProvider,
         snapshot: UsageSnapshot?,
+        tokenSnapshot: CostUsageTokenSnapshot?,
         isRefreshing: Bool,
         lastError: String?) -> (text: String, style: SubtitleStyle)
     {
         if let lastError, !lastError.isEmpty {
-            return (lastError.trimmingCharacters(in: .whitespacesAndNewlines), .error)
+            // OpenCode may fail web cookie import while local cost tracking still works from opencode.db.
+            if !(provider == .opencode && snapshot == nil && tokenSnapshot != nil) {
+                return (lastError.trimmingCharacters(in: .whitespacesAndNewlines), .error)
+            }
         }
 
-        if isRefreshing, snapshot == nil {
+        if isRefreshing, snapshot == nil, tokenSnapshot == nil {
             return ("Refreshing...", .loading)
         }
 
         if let updated = snapshot?.updatedAt {
             return (UsageFormatter.updatedString(from: updated), .info)
+        }
+
+        if provider == .opencode,
+           let updated = tokenSnapshot?.updatedAt
+        {
+            return ("Local cost · \(UsageFormatter.updatedString(from: updated))", .info)
         }
 
         return ("Not fetched yet", .info)
@@ -1100,7 +1116,9 @@ extension UsageMenuCardView.Model {
         snapshot: CostUsageTokenSnapshot?,
         error: String?) -> TokenUsageSection?
     {
-        guard provider == .codex || provider == .claude || provider == .vertexai else { return nil }
+        guard provider == .codex || provider == .claude || provider == .vertexai || provider == .opencode else {
+            return nil
+        }
         guard enabled else { return nil }
         guard let snapshot else { return nil }
 

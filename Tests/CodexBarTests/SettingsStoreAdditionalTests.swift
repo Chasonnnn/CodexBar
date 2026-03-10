@@ -81,6 +81,20 @@ struct SettingsStoreAdditionalTests {
         #expect(SettingsStore.hasAnyTokenCostUsageSources(env: env, fileManager: fm))
     }
 
+    @Test
+    func detectsTokenCostUsageSourcesFromOpenCodeDatabase() throws {
+        let fm = FileManager.default
+        let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try fm.createDirectory(at: root, withIntermediateDirectories: true)
+        let dbURL = root.appendingPathComponent("opencode.db", isDirectory: false)
+        try Data("sqlite".utf8).write(to: dbURL)
+        defer { try? fm.removeItem(at: root) }
+
+        let env = ["CODEXBAR_OPENCODE_DB_PATH": dbURL.path]
+
+        #expect(SettingsStore.hasAnyTokenCostUsageSources(env: env, fileManager: fm))
+    }
+
     private static func makeSettingsStore(suite: String) -> SettingsStore {
         let defaults = UserDefaults(suiteName: suite)!
         defaults.removePersistentDomain(forName: suite)

@@ -46,6 +46,7 @@ struct ProvidersPane: View {
                         Task { @MainActor in
                             await ProviderInteractionContext.$current.withValue(.userInitiated) {
                                 await self.store.refreshProvider(provider, allowDisabled: true)
+                                await self.store.refreshTokenUsageForProvider(provider, force: true)
                             }
                         }
                     })
@@ -114,6 +115,10 @@ struct ProvidersPane: View {
         if let snapshot = self.store.snapshot(for: provider) {
             let relative = snapshot.updatedAt.relativeDescription()
             usageText = relative
+        } else if provider == .opencode,
+                  self.store.tokenSnapshot(for: .opencode)?.daily.isEmpty == false
+        {
+            usageText = "local cost available"
         } else if self.store.isStale(provider: provider) {
             usageText = "last fetch failed"
         } else {
@@ -322,7 +327,7 @@ struct ProvidersPane: View {
             dashboardError = self.store.lastOpenAIDashboardError
             tokenSnapshot = self.store.tokenSnapshot(for: provider)
             tokenError = self.store.tokenError(for: provider)
-        } else if provider == .claude || provider == .vertexai {
+        } else if provider == .claude || provider == .vertexai || provider == .opencode {
             credits = nil
             creditsError = nil
             dashboard = nil

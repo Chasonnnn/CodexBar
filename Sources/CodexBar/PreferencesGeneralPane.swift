@@ -49,6 +49,7 @@ struct GeneralPane: View {
 
                                 self.costStatusLine(provider: .claude)
                                 self.costStatusLine(provider: .codex)
+                                self.costStatusLine(provider: .opencode)
                             }
                         }
                     }
@@ -118,7 +119,7 @@ struct GeneralPane: View {
     private func costStatusLine(provider: UsageProvider) -> some View {
         let name = ProviderDescriptorRegistry.descriptor(for: provider).metadata.displayName
 
-        guard provider == .claude || provider == .codex else {
+        guard provider == .claude || provider == .codex || provider == .opencode else {
             return Text("\(name): unsupported")
                 .font(.footnote)
                 .foregroundStyle(.tertiary)

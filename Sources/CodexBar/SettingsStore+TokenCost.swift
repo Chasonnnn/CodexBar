@@ -75,6 +75,27 @@ extension SettingsStore {
             ]
         }()
 
-        return claudeRoots.contains(where: hasAnyJsonl(in:))
+        if claudeRoots.contains(where: hasAnyJsonl(in:)) { return true }
+
+        let opencodeDatabaseURL: URL = {
+            if let override = env["CODEXBAR_OPENCODE_DB_PATH"]?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !override.isEmpty
+            {
+                return URL(fileURLWithPath: override)
+            }
+            return fileManager.homeDirectoryForCurrentUser
+                .appendingPathComponent(".local/share/opencode/opencode.db", isDirectory: false)
+        }()
+
+        if fileManager.fileExists(atPath: opencodeDatabaseURL.path) {
+            if let attributes = try? fileManager.attributesOfItem(atPath: opencodeDatabaseURL.path),
+               let size = (attributes[.size] as? NSNumber)?.intValue
+            {
+                return size > 0
+            }
+            return true
+        }
+
+        return false
     }
 }

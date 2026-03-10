@@ -68,4 +68,43 @@ struct CostUsagePricingTests {
             outputTokens: 40)
         #expect(cost == nil)
     }
+
+    @Test
+    func normalizesOpenCodeClaudeAndOpenAIAliases() {
+        #expect(CostUsagePricing.normalizeOpenCodeModel("anthropic.claude-4.6-opus-thinking") == "claude-opus-4-6")
+        #expect(CostUsagePricing.normalizeOpenCodeModel("openai.gpt-5.3-codex-xhigh") == "gpt-5.3")
+    }
+
+    @Test
+    func openCodeCostSupportsClaudeAlias() {
+        let cost = CostUsagePricing.openCodeCostUSD(
+            model: "anthropic.claude-4.6-opus-thinking",
+            inputTokens: 1_000,
+            cacheReadInputTokens: 100,
+            cacheCreationInputTokens: 100,
+            outputTokens: 100)
+        #expect(cost != nil)
+    }
+
+    @Test
+    func openCodeCostSupportsOpenAIAlias() {
+        let cost = CostUsagePricing.openCodeCostUSD(
+            model: "openai.gpt-5.3-codex-xhigh",
+            inputTokens: 1_000,
+            cacheReadInputTokens: 200,
+            cacheCreationInputTokens: 0,
+            outputTokens: 100)
+        #expect(cost != nil)
+    }
+
+    @Test
+    func openCodeCostSupportsGeminiAlias() {
+        let cost = CostUsagePricing.openCodeCostUSD(
+            model: "google.gemini-3.1-pro-preview-thinking",
+            inputTokens: 1_000,
+            cacheReadInputTokens: 0,
+            cacheCreationInputTokens: 0,
+            outputTokens: 100)
+        #expect(cost != nil)
+    }
 }

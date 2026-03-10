@@ -27,13 +27,21 @@ public struct CostUsageTokenSnapshot: Sendable, Equatable {
 
 public struct CostUsageDailyReport: Sendable, Decodable {
     public struct ModelBreakdown: Sendable, Decodable, Equatable {
+        public enum CostSource: String, Sendable, Decodable, Equatable {
+            case native
+            case fallback
+            case mixed
+        }
+
         public let modelName: String
         public let costUSD: Double?
+        public let costSource: CostSource?
 
         private enum CodingKeys: String, CodingKey {
             case modelName
             case costUSD
             case cost
+            case costSource
         }
 
         public init(from decoder: Decoder) throws {
@@ -42,11 +50,17 @@ public struct CostUsageDailyReport: Sendable, Decodable {
             self.costUSD =
                 try container.decodeIfPresent(Double.self, forKey: .costUSD)
                 ?? container.decodeIfPresent(Double.self, forKey: .cost)
+            if let sourceRaw = try container.decodeIfPresent(String.self, forKey: .costSource) {
+                self.costSource = CostSource(rawValue: sourceRaw)
+            } else {
+                self.costSource = nil
+            }
         }
 
-        public init(modelName: String, costUSD: Double?) {
+        public init(modelName: String, costUSD: Double?, costSource: CostSource? = nil) {
             self.modelName = modelName
             self.costUSD = costUSD
+            self.costSource = costSource
         }
     }
 
