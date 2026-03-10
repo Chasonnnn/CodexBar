@@ -158,6 +158,11 @@ final class UsageStore {
     @ObservationIgnored private let tokenFetchTimeout: TimeInterval = 10 * 60
     @ObservationIgnored private let startupBehavior: StartupBehavior
 
+    /// Prevents macOS App Nap from suspending our periodic refresh timers.
+    /// Menu bar apps with no visible windows are prime candidates for napping,
+    /// which silently delays Task.sleep and stalls auto-refresh for hours.
+    @ObservationIgnored nonisolated(unsafe) private var appNapActivity: NSObjectProtocol?
+
     init(
         fetcher: UsageFetcher,
         browserDetection: BrowserDetection,
@@ -220,6 +225,9 @@ final class UsageStore {
         Task { await self.refresh() }
         self.startTimer()
         self.startTokenTimer()
+        self.appNapActivity = ProcessInfo.processInfo.beginActivity(
+            options: .userInitiatedAllowingIdleSystemSleep,
+            reason: "CodexBar periodic usage refresh")
     }
 
     private static func isRunningTestsProcess() -> Bool {
@@ -492,6 +500,9 @@ final class UsageStore {
         self.timerTask?.cancel()
         self.tokenTimerTask?.cancel()
         self.tokenRefreshSequenceTask?.cancel()
+        if let activity = self.appNapActivity {
+            ProcessInfo.processInfo.endActivity(activity)
+        }
     }
 
     enum SessionQuotaWindowSource: String {
