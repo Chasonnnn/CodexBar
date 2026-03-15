@@ -289,6 +289,7 @@ private struct RPCCreditsSnapshot: Decodable, Encodable {
 private enum RPCWireError: Error, LocalizedError {
     case startFailed(String)
     case requestFailed(String)
+    case requestTimedOut(String, TimeInterval)
     case malformed(String)
 
     var errorDescription: String? {
@@ -297,15 +298,36 @@ private enum RPCWireError: Error, LocalizedError {
             "Codex not running. Try running a Codex command first. (\(message))"
         case let .requestFailed(message):
             "Codex connection failed: \(message)"
+        case let .requestTimedOut(method, timeout):
+            "Codex connection timed out waiting for \(method) after \(Self.formatTimeout(timeout))."
         case let .malformed(message):
             "Codex returned invalid data: \(message)"
         }
     }
+
+    private static func formatTimeout(_ timeout: TimeInterval) -> String {
+        let rounded = timeout.rounded()
+        if abs(timeout - rounded) < 0.01 {
+            return "\(Int(rounded))s"
+        }
+        return String(format: "%.1fs", timeout)
+    }
 }
+
+#if DEBUG
+enum CodexRPCTestHooks {
+    nonisolated(unsafe) static var requestTimeoutOverride: TimeInterval?
+}
+#endif
 
 /// RPC helper used on background tasks; safe because we confine it to the owning task.
 private final class CodexRPCClient: @unchecked Sendable {
+    private struct MessageEnvelope: @unchecked Sendable {
+        let payload: [String: Any]
+    }
+
     private static let log = CodexBarLog.logger(LogCategories.codexRPC)
+    private static let defaultRequestTimeoutSeconds: TimeInterval = 5.0
     private let process = Process()
     private let stdinPipe = Pipe()
     private let stdoutPipe = Pipe()
@@ -444,21 +466,36 @@ private final class CodexRPCClient: @unchecked Sendable {
         self.nextID += 1
         try self.sendRequest(id: id, method: method, params: params)
 
-        while true {
-            let message = try await self.readNextMessage()
+        return try await withThrowingTaskGroup(of: MessageEnvelope.self) { group in
+            group.addTask { [self] in
+                while true {
+                    let message = try await self.readNextMessage()
 
-            if message["id"] == nil, let methodName = message["method"] as? String {
-                Self.debugWriteStderr("[codex notify] \(methodName)\n")
-                continue
+                    if message["id"] == nil, let methodName = message["method"] as? String {
+                        Self.debugWriteStderr("[codex notify] \(methodName)\n")
+                        continue
+                    }
+
+                    guard let messageID = self.jsonID(message["id"]), messageID == id else { continue }
+
+                    if let error = message["error"] as? [String: Any], let messageText = error["message"] as? String {
+                        throw RPCWireError.requestFailed(messageText)
+                    }
+
+                    return MessageEnvelope(payload: message)
+                }
+            }
+            group.addTask {
+                let timeout = Self.requestTimeoutSeconds
+                try await Task.sleep(for: .seconds(timeout))
+                throw RPCWireError.requestTimedOut(method, timeout)
             }
 
-            guard let messageID = self.jsonID(message["id"]), messageID == id else { continue }
-
-            if let error = message["error"] as? [String: Any], let messageText = error["message"] as? String {
-                throw RPCWireError.requestFailed(messageText)
+            defer { group.cancelAll() }
+            guard let response = try await group.next() else {
+                throw RPCWireError.malformed("missing response for \(method)")
             }
-
-            return message
+            return response.payload
         }
     }
 
@@ -507,6 +544,19 @@ private final class CodexRPCClient: @unchecked Sendable {
         default:
             nil
         }
+    }
+
+    private static var requestTimeoutSeconds: TimeInterval {
+        #if DEBUG
+        guard let override = CodexRPCTestHooks.requestTimeoutOverride,
+              override.isFinite
+        else {
+            return self.defaultRequestTimeoutSeconds
+        }
+        return max(0.1, override)
+        #else
+        self.defaultRequestTimeoutSeconds
+        #endif
     }
 }
 
