@@ -151,7 +151,7 @@ struct CostHistoryChartMenuView: View {
         var peak: (key: String, costUSD: Double)?
         var maxCostUSD: Double = 0
         for entry in sorted {
-            guard let costUSD = entry.costUSD, costUSD > 0 else { continue }
+            guard let costUSD = entry.costUSD, costUSD >= 0 else { continue }
             guard let date = self.dateFromDayKey(entry.date) else { continue }
             let point = Point(date: date, costUSD: costUSD, totalTokens: entry.totalTokens)
             points.append(point)
@@ -180,7 +180,7 @@ struct CostHistoryChartMenuView: View {
             dateKeys: dateKeys,
             axisDates: axisDates,
             barColor: barColor,
-            peakKey: peak?.key,
+            peakKey: maxCostUSD > 0 ? peak?.key : nil,
             maxCostUSD: maxCostUSD)
     }
 
@@ -310,35 +310,19 @@ struct CostHistoryChartMenuView: View {
         guard let entry = model.entriesByDateKey[key] else { return nil }
         guard let breakdown = entry.modelBreakdowns, !breakdown.isEmpty else { return nil }
         let parts = breakdown
-            .compactMap { item -> (name: String, costUSD: Double, sourceLabel: String?)? in
-                guard let costUSD = item.costUSD, costUSD > 0 else { return nil }
-                return (
-                    UsageFormatter.modelDisplayName(item.modelName),
-                    costUSD,
-                    Self.costSourceLabel(item.costSource))
+            .compactMap { item -> (name: String, detail: String, costUSD: Double)? in
+                guard let costUSD = item.costUSD else { return nil }
+                let name = UsageFormatter.modelDisplayName(item.modelName)
+                guard let detail = UsageFormatter.modelCostDetail(item.modelName, costUSD: costUSD) else { return nil }
+                return (name, detail, costUSD)
             }
             .sorted { lhs, rhs in
                 if lhs.costUSD == rhs.costUSD { return lhs.name < rhs.name }
                 return lhs.costUSD > rhs.costUSD
             }
             .prefix(3)
-            .map { item in
-                let cost = UsageFormatter.usdString(item.costUSD)
-                if let source = item.sourceLabel {
-                    return "\(item.name) \(cost) [\(source)]"
-                }
-                return "\(item.name) \(cost)"
-            }
+            .map { "\($0.name) \($0.detail)" }
         guard !parts.isEmpty else { return nil }
         return "Top: \(parts.joined(separator: " · "))"
-    }
-
-    private static func costSourceLabel(_ source: CostUsageDailyReport.ModelBreakdown.CostSource?) -> String? {
-        switch source {
-        case .native: "native"
-        case .fallback: "fallback"
-        case .mixed: "mixed"
-        case nil: nil
-        }
     }
 }
