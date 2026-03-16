@@ -391,7 +391,7 @@ public struct CostUsageMonthlyReport: Sendable, Decodable {
     }
 }
 
-private struct CostUsageLegacyTotals: Sendable, Decodable {
+private struct CostUsageLegacyTotals: Decodable {
     let totalInputTokens: Int?
     let totalOutputTokens: Int?
     let cacheReadTokens: Int?

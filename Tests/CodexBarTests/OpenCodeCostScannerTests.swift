@@ -12,7 +12,7 @@ struct OpenCodeCostScannerTests {
         defer { env.cleanup() }
 
         let day = try env.makeLocalNoon(year: 2026, month: 3, day: 3)
-        let timestampMs = Int64(day.timeIntervalSince1970 * 1_000)
+        let timestampMs = Int64(day.timeIntervalSince1970 * 1000)
 
         try env.insertRow(OpenCodeCostTestEnvironment.Row(
             sessionID: "ses_1",
@@ -20,7 +20,7 @@ struct OpenCodeCostScannerTests {
             modelID: "anthropic.claude-4.6-opus-thinking",
             providerID: "cornell",
             timestampMs: timestampMs,
-            inputTokens: 1_000,
+            inputTokens: 1000,
             outputTokens: 100,
             cacheReadTokens: 200,
             cacheWriteTokens: 50,
@@ -55,11 +55,11 @@ struct OpenCodeCostScannerTests {
         #expect(report.data.count == 1)
         #expect(report.data[0].modelsUsed?.contains("claude-opus-4-6") == true)
         #expect(report.data[0].modelsUsed?.contains("gpt-5.3") == true)
-        #expect(report.data[0].inputTokens == 1_400)
+        #expect(report.data[0].inputTokens == 1400)
         #expect(report.data[0].cacheReadTokens == 300)
         #expect(report.data[0].cacheCreationTokens == 50)
         #expect(report.data[0].outputTokens == 140)
-        #expect(report.data[0].totalTokens == 1_890)
+        #expect(report.data[0].totalTokens == 1890)
         #expect((report.data[0].costUSD ?? 0) > 0)
         #expect((report.summary?.totalCostUSD ?? 0) > 0)
 
@@ -76,7 +76,7 @@ struct OpenCodeCostScannerTests {
         defer { env.cleanup() }
 
         let day = try env.makeLocalNoon(year: 2026, month: 3, day: 3)
-        let timestampMs = Int64(day.timeIntervalSince1970 * 1_000)
+        let timestampMs = Int64(day.timeIntervalSince1970 * 1000)
 
         try env.insertRow(OpenCodeCostTestEnvironment.Row(
             sessionID: "ses_native",
@@ -117,7 +117,7 @@ struct OpenCodeCostScannerTests {
         defer { env.cleanup() }
 
         let day = try env.makeLocalNoon(year: 2026, month: 3, day: 3)
-        let timestampMs = Int64(day.timeIntervalSince1970 * 1_000)
+        let timestampMs = Int64(day.timeIntervalSince1970 * 1000)
 
         try env.insertRow(OpenCodeCostTestEnvironment.Row(
             sessionID: "ses_mixed",
@@ -342,7 +342,7 @@ private struct OpenCodeCostTestEnvironment {
     }
 
     private func sqliteError(db: OpaquePointer?, domain: String) -> NSError {
-        let message: String = if let db, let cString = sqlite3_errmsg(db) {
+        let message = if let db, let cString = sqlite3_errmsg(db) {
             String(cString: cString)
         } else {
             "sqlite error"

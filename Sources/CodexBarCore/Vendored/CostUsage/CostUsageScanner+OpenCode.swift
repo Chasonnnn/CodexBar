@@ -88,7 +88,9 @@ extension CostUsageScanner {
                 let nativeCount = packed[safe: 6] ?? 0
                 let fallbackCount = packed[safe: 7] ?? 0
                 let modelCost = costKnown ? Double(costNanos) / self.opencodeCostScale : nil
-                let costSource: CostUsageDailyReport.ModelBreakdown.CostSource? = if nativeCount > 0, fallbackCount > 0 {
+                let costSource: CostUsageDailyReport.ModelBreakdown.CostSource? = if nativeCount > 0,
+                                                                                     fallbackCount > 0
+                {
                     .mixed
                 } else if nativeCount > 0 {
                     .native
@@ -220,8 +222,8 @@ extension CostUsageScanner {
                 continue
             }
 
-            let timestampMs = timestampRaw > 3_000_000_000 ? timestampRaw : timestampRaw * 1_000
-            let timestampDate = Date(timeIntervalSince1970: TimeInterval(timestampMs) / 1_000)
+            let timestampMs = timestampRaw > 3_000_000_000 ? timestampRaw : timestampRaw * 1000
+            let timestampDate = Date(timeIntervalSince1970: TimeInterval(timestampMs) / 1000)
             let dayKey = CostUsageDayRange.dayKey(from: timestampDate)
             guard CostUsageDayRange.isInRange(dayKey: dayKey, since: range.scanSinceKey, until: range.scanUntilKey)
             else {

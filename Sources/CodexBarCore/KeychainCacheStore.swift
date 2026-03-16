@@ -39,6 +39,7 @@ public enum KeychainCacheStore {
         return "group.com.steipete.codexbar"
         #endif
     }
+
     private static let testStoreLock = NSLock()
     private struct TestStoreKey: Hashable {
         let service: String
@@ -154,7 +155,7 @@ public enum KeychainCacheStore {
         self.globalServiceOverride = service
     }
 
-    static func withServiceOverrideForTesting<T>(
+    public static func withServiceOverrideForTesting<T>(
         _ service: String?,
         operation: () throws -> T) rethrows -> T
     {
@@ -163,13 +164,26 @@ public enum KeychainCacheStore {
         }
     }
 
-    static func withServiceOverrideForTesting<T>(
+    public static func withServiceOverrideForTesting<T>(
         _ service: String?,
         operation: () async throws -> T) async rethrows -> T
     {
         try await self.$serviceOverride.withValue(service) {
             try await operation()
         }
+    }
+
+    public static func withCurrentServiceOverrideForTesting<T>(
+        operation: () async throws -> T) async rethrows -> T
+    {
+        let service = self.serviceOverride
+        return try await self.$serviceOverride.withValue(service) {
+            try await operation()
+        }
+    }
+
+    public static var currentServiceOverrideForTesting: String? {
+        self.serviceOverride
     }
 
     static func setTestStoreForTesting(_ enabled: Bool) {

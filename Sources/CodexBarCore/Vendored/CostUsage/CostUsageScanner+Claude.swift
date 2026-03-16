@@ -275,7 +275,7 @@ extension CostUsageScanner {
         for component in components {
             let lower = component.lowercased()
             // Match CodexBar's ClaudeProbe working directory (hyphens encode path separators).
-            if lower.contains("codexbar") && lower.contains("claudeprobe") {
+            if lower.contains("codexbar"), lower.contains("claudeprobe") {
                 return true
             }
             // Match the Application-Support-CodexBar-ClaudeProbe encoding pattern.
