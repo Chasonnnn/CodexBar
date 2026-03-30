@@ -132,10 +132,10 @@ struct AboutPane: View {
             }
 
             VStack(spacing: 2) {
-                Text("Originally created by Peter Steinberger")
+                Text("© 2026 Peter Steinberger")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                Text("Enhanced and maintained by Haocheng")
+                Text("Fork enhancements maintained by Haocheng")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Text("MIT License")
