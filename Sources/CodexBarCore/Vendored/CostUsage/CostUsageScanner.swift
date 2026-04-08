@@ -53,12 +53,12 @@ enum CostUsageScanner {
         let parsedBytes: Int64
     }
 
-    enum ClaudePathRole: String, Codable, Sendable {
+    enum ClaudePathRole: String, Codable {
         case parent
         case subagent
     }
 
-    struct ClaudeUsageRow: Codable, Sendable {
+    struct ClaudeUsageRow: Codable {
         let dayKey: String
         let model: String
         let sessionId: String?
@@ -96,7 +96,8 @@ enum CostUsageScanner {
             return self.loadClaudeDaily(provider: .vertexai, range: range, now: now, options: filtered)
         case .opencode:
             return self.loadOpenCodeDaily(range: range, now: now, options: options)
-        case .zai, .gemini, .antigravity, .cursor, .alibaba, .factory, .copilot, .minimax, .kilo, .kiro, .kimi,
+        case .zai, .gemini, .antigravity, .cursor, .opencodego, .alibaba, .factory, .copilot, .minimax, .kilo,
+             .kiro, .kimi,
              .kimik2, .augment, .jetbrains, .amp, .ollama, .synthetic, .openrouter, .warp, .perplexity:
             return emptyReport
         }
