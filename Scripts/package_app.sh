@@ -6,6 +6,19 @@ SIGNING_MODE=${CODEXBAR_SIGNING:-}
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 cd "$ROOT"
 
+resolve_app_destination() {
+  local destination="$1"
+  if [[ "$destination" != /* ]]; then
+    printf '%s\n' "$ROOT/$destination"
+  else
+    printf '%s\n' "$destination"
+  fi
+}
+
+DEFAULT_APP_DESTINATION="/Applications/CodexBar.app"
+FINAL_APP=$(resolve_app_destination "${CODEXBAR_APP_DESTINATION:-$DEFAULT_APP_DESTINATION}")
+LEGACY_ROOT_APP="$ROOT/CodexBar.app"
+
 # Load version info
 source "$ROOT/version.env"
 
@@ -112,7 +125,7 @@ done
 TMPAPP="/tmp/CodexBar-build-$$"
 rm -rf "$TMPAPP"
 APP="$TMPAPP/CodexBar.app"
-FINAL_APP="$ROOT/CodexBar.app"
+mkdir -p "$(dirname "$FINAL_APP")"
 rm -rf "$FINAL_APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" "$APP/Contents/Frameworks"
 mkdir -p "$APP/Contents/Helpers" "$APP/Contents/PlugIns"
@@ -407,8 +420,13 @@ codesign "${CODESIGN_ARGS[@]}" \
   --entitlements "$APP_ENTITLEMENTS" \
   "$APP"
 
-# Move the signed app back to project root (ditto preserves signatures but not xattrs)
+# Install the signed app bundle to the requested destination (ditto preserves signatures but not xattrs)
 ditto "$APP" "$FINAL_APP"
 rm -rf "$TMPAPP"
+
+if [[ "$FINAL_APP" != "$LEGACY_ROOT_APP" && -e "$LEGACY_ROOT_APP" ]]; then
+  rm -rf "$LEGACY_ROOT_APP"
+  echo "Removed stale legacy bundle $LEGACY_ROOT_APP"
+fi
 
 echo "Created $FINAL_APP"

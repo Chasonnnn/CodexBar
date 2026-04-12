@@ -8,7 +8,7 @@ read_when:
 # Packaging & signing
 
 ## Scripts
-- `Scripts/package_app.sh`: builds host arch by default; set `ARCHES="arm64 x86_64"` for universal. Verifies slices.
+- `Scripts/package_app.sh`: builds host arch by default, installs to `/Applications/CodexBar.app`, and verifies slices. Override with `CODEXBAR_APP_DESTINATION=/path/to/CodexBar.app`.
 - `Scripts/compile_and_run.sh`: uses host arch; pass `--release-universal` or `--release-arches="arm64 x86_64"` for release packaging.
 - `Scripts/sign-and-notarize.sh`: signs, notarizes, staples, zips (accepts `ARCHES` for universal).
 - `Scripts/make_appcast.sh`: generates Sparkle appcast and embeds HTML release notes.

@@ -6,7 +6,11 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-APP_PATH="$PROJECT_ROOT/CodexBar.app"
+DEFAULT_APP_DESTINATION="/Applications/CodexBar.app"
+APP_PATH="${CODEXBAR_APP_DESTINATION:-${DEFAULT_APP_DESTINATION}}"
+if [[ "${APP_PATH}" != /* ]]; then
+    APP_PATH="${PROJECT_ROOT}/${APP_PATH}"
+fi
 
 echo "==> Killing existing CodexBar instances"
 pkill -x CodexBar || pkill -f CodexBar.app || true
@@ -14,7 +18,7 @@ sleep 0.5
 
 if [[ ! -d "$APP_PATH" ]]; then
     echo "ERROR: CodexBar.app not found at $APP_PATH"
-    echo "Run ./Scripts/package_app.sh first to build the app"
+    echo "Run ./Scripts/package_app.sh first to install the app bundle"
     exit 1
 fi
 
@@ -29,4 +33,3 @@ else
     echo "ERROR: App exited immediately. Check crash logs in Console.app (User Reports)."
     exit 1
 fi
-

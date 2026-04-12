@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ROOT=$(cd "$(dirname "$0")/.." && pwd)
 APP_NAME="CodexBar"
 APP_IDENTITY="Developer ID Application: Peter Steinberger (Y5PE65HELJ)"
-APP_BUNDLE="CodexBar.app"
-ROOT=$(cd "$(dirname "$0")/.." && pwd)
+APP_BUNDLE="${ROOT}/CodexBar.app"
 source "$ROOT/version.env"
 ZIP_NAME="${APP_NAME}-${MARKETING_VERSION}.zip"
 DSYM_ZIP="${APP_NAME}-${MARKETING_VERSION}.dSYM.zip"
@@ -36,7 +36,7 @@ ARCH_LIST=( ${ARCHES_VALUE} )
 for ARCH in "${ARCH_LIST[@]}"; do
   swift build -c release --arch "$ARCH"
 done
-ARCHES="${ARCHES_VALUE}" ./Scripts/package_app.sh release
+CODEXBAR_APP_DESTINATION="$APP_BUNDLE" ARCHES="${ARCHES_VALUE}" ./Scripts/package_app.sh release
 
 ENTITLEMENTS_DIR="$ROOT/.build/entitlements"
 APP_ENTITLEMENTS="${ENTITLEMENTS_DIR}/CodexBar.entitlements"

@@ -133,7 +133,7 @@ swiftlint --strict
 ### Local Development Build
 ```bash
 ./Scripts/package_app.sh
-# Creates: CodexBar.app (ad-hoc signed)
+# Installs: /Applications/CodexBar.app (ad-hoc signed)
 ```
 
 ### Release Build (Notarized)

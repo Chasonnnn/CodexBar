@@ -4,7 +4,11 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_BUNDLE="${ROOT_DIR}/CodexBar.app"
+DEFAULT_APP_DESTINATION="/Applications/CodexBar.app"
+APP_BUNDLE="${CODEXBAR_APP_DESTINATION:-${DEFAULT_APP_DESTINATION}}"
+if [[ "${APP_BUNDLE}" != /* ]]; then
+  APP_BUNDLE="${ROOT_DIR}/${APP_BUNDLE}"
+fi
 APP_PROCESS_PATTERN="CodexBar.app/Contents/MacOS/CodexBar"
 DEBUG_PROCESS_PATTERN="${ROOT_DIR}/.build/debug/CodexBar"
 RELEASE_PROCESS_PATTERN="${ROOT_DIR}/.build/release/CodexBar"
@@ -182,6 +186,7 @@ if [[ "${SIGNING_MODE}" == "adhoc" ]]; then
 else
   log "==> Signing: ${APP_IDENTITY:-Developer ID Application}"
 fi
+log "==> App destination: ${APP_BUNDLE}"
 
 acquire_lock
 
@@ -215,12 +220,12 @@ if [[ -n "${RELEASE_ARCHES}" ]]; then
   ARCHES_VALUE="${RELEASE_ARCHES}"
 fi
 if [[ "${DEBUG_LLDB}" == "1" ]]; then
-  run_step "package app" env CODEXBAR_ALLOW_LLDB=1 ARCHES="${ARCHES_VALUE}" "${ROOT_DIR}/Scripts/package_app.sh" debug
+  run_step "package app" env CODEXBAR_APP_DESTINATION="${APP_BUNDLE}" CODEXBAR_ALLOW_LLDB=1 ARCHES="${ARCHES_VALUE}" "${ROOT_DIR}/Scripts/package_app.sh" debug
 else
   if [[ -n "${SIGNING_MODE}" ]]; then
-    run_step "package app" env CODEXBAR_SIGNING="${SIGNING_MODE}" ARCHES="${ARCHES_VALUE}" "${ROOT_DIR}/Scripts/package_app.sh"
+    run_step "package app" env CODEXBAR_APP_DESTINATION="${APP_BUNDLE}" CODEXBAR_SIGNING="${SIGNING_MODE}" ARCHES="${ARCHES_VALUE}" "${ROOT_DIR}/Scripts/package_app.sh"
   else
-    run_step "package app" env ARCHES="${ARCHES_VALUE}" "${ROOT_DIR}/Scripts/package_app.sh"
+    run_step "package app" env CODEXBAR_APP_DESTINATION="${APP_BUNDLE}" ARCHES="${ARCHES_VALUE}" "${ROOT_DIR}/Scripts/package_app.sh"
   fi
 fi
 

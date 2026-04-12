@@ -110,9 +110,9 @@ Wondering if CodexBar scans your disk? It doesn’t crawl your filesystem; it re
 ## Build from source
 ```bash
 swift build -c release          # or debug for development
-./Scripts/package_app.sh        # builds CodexBar.app in-place
+./Scripts/package_app.sh        # installs CodexBar.app to /Applications
 CODEXBAR_SIGNING=adhoc ./Scripts/package_app.sh  # ad-hoc signing (no Apple Developer account)
-open CodexBar.app
+open /Applications/CodexBar.app
 ```
 
 Dev loop:
