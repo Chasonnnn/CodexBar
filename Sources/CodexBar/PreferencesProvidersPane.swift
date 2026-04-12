@@ -66,16 +66,7 @@ struct ProvidersPane: View {
                     isErrorExpanded: self.expandedBinding(for: provider),
                     onCopyError: { text in self.copyToPasteboard(text) },
                     onRefresh: {
-                        Task { @MainActor in
-                            await ProviderInteractionContext.$current.withValue(.userInitiated) {
-                                if provider == .codex {
-                                    await self.store.refreshCodexAccountScopedState(allowDisabled: true)
-                                } else {
-                                    await self.store.refreshProvider(provider, allowDisabled: true)
-                                }
-                                await self.store.refreshTokenUsageForProvider(provider, force: true)
-                            }
-                        }
+                        self.triggerRefresh(for: provider)
                     },
                     showsSupplementarySettingsContent: self.codexAccountsSectionState(for: provider) != nil,
                     supplementarySettingsContent: {
@@ -155,6 +146,19 @@ struct ProvidersPane: View {
             return
         }
         self.selectedProvider = self.providers.first
+    }
+
+    private func triggerRefresh(for provider: UsageProvider) {
+        Task { @MainActor in
+            await ProviderInteractionContext.$current.withValue(.userInitiated) {
+                if provider == .codex {
+                    await self.store.refreshCodexAccountScopedState(allowDisabled: true)
+                } else {
+                    await self.store.refreshProvider(provider, allowDisabled: true)
+                }
+                await self.store.refreshTokenUsageForProvider(provider, force: true)
+            }
+        }
     }
 
     func binding(for provider: UsageProvider) -> Binding<Bool> {
