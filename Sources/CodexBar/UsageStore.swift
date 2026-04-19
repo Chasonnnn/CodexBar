@@ -22,14 +22,27 @@ extension UsageStore {
         _ = self.openAIDashboard
         _ = self.lastOpenAIDashboardError
         _ = self.openAIDashboardRequiresLogin
-        _ = self.openAIDashboardCookieImportStatus
-        _ = self.openAIDashboardCookieImportDebugLog
         _ = self.versions
         _ = self.isRefreshing
         _ = self.refreshingProviders
         _ = self.pathDebugInfo
         _ = self.statuses
         _ = self.probeLogs
+        _ = self.historicalPaceRevision
+        return 0
+    }
+
+    var iconObservationToken: Int {
+        _ = self.snapshots
+        _ = self.errors
+        _ = self.credits
+        _ = self.lastCreditsError
+        _ = self.openAIDashboard
+        _ = self.lastOpenAIDashboardError
+        _ = self.openAIDashboardRequiresLogin
+        _ = self.isRefreshing
+        _ = self.refreshingProviders
+        _ = self.statuses
         _ = self.historicalPaceRevision
         return 0
     }
@@ -166,6 +179,7 @@ final class UsageStore {
     @ObservationIgnored let browserDetection: BrowserDetection
     @ObservationIgnored private let registry: ProviderRegistry
     @ObservationIgnored let settings: SettingsStore
+    @ObservationIgnored let environmentBase: [String: String]
     @ObservationIgnored private let sessionQuotaNotifier: any SessionQuotaNotifying
     @ObservationIgnored private let sessionQuotaLogger = CodexBarLog.logger(LogCategories.sessionQuota)
     @ObservationIgnored let openAIWebLogger = CodexBarLog.logger(LogCategories.openAIWeb)
@@ -212,7 +226,8 @@ final class UsageStore {
         historicalUsageHistoryStore: HistoricalUsageHistoryStore = HistoricalUsageHistoryStore(),
         planUtilizationHistoryStore: PlanUtilizationHistoryStore = .defaultAppSupport(),
         sessionQuotaNotifier: any SessionQuotaNotifying = SessionQuotaNotifier(),
-        startupBehavior: StartupBehavior = .automatic)
+        startupBehavior: StartupBehavior = .automatic,
+        environmentBase: [String: String] = ProcessInfo.processInfo.environment)
     {
         self.codexFetcher = fetcher
         self.browserDetection = browserDetection
@@ -220,6 +235,7 @@ final class UsageStore {
         self.costUsageFetcher = costUsageFetcher
         self.settings = settings
         self.registry = registry
+        self.environmentBase = environmentBase
         self.historicalUsageHistoryStore = historicalUsageHistoryStore
         self.planUtilizationHistoryStore = planUtilizationHistoryStore
         self.sessionQuotaNotifier = sessionQuotaNotifier
@@ -239,7 +255,8 @@ final class UsageStore {
             metadata: self.providerMetadata,
             codexFetcher: fetcher,
             claudeFetcher: self.claudeFetcher,
-            browserDetection: browserDetection)
+            browserDetection: browserDetection,
+            environmentBase: environmentBase)
         self.providerRuntimes = Dictionary(uniqueKeysWithValues: ProviderCatalog.all.compactMap { implementation in
             implementation.makeRuntime().map { (implementation.id, $0) }
         })
@@ -339,6 +356,11 @@ final class UsageStore {
         self.settings.enabledProvidersOrdered(metadataByProvider: self.providerMetadata)
     }
 
+    /// Providers that should actually participate in background refresh/status/token work.
+    func enabledProvidersForBackgroundWork() -> [UsageProvider] {
+        self.enabledProviders()
+    }
+
     var statusChecksEnabled: Bool {
         self.settings.statusChecksEnabled
     }
@@ -409,7 +431,7 @@ final class UsageStore {
         // Otherwise providers (notably token-account-backed API providers) can fetch successfully but be
         // hidden from the menu because their credentials are not in ProcessInfo's environment.
         let environment = ProviderRegistry.makeEnvironment(
-            base: ProcessInfo.processInfo.environment,
+            base: self.environmentBase,
             provider: provider,
             settings: self.settings,
             tokenOverride: nil)
@@ -444,8 +466,10 @@ final class UsageStore {
         guard !self.isRefreshing else { return }
         self.prepareRefreshState()
         let refreshPhase: ProviderRefreshPhase = self.hasCompletedInitialRefresh ? .regular : .startup
-        let enabledProviders = self.enabledProvidersForDisplay()
-        let enabledProviderSet = Set(enabledProviders)
+        let displayEnabledProviders = self.enabledProvidersForDisplay()
+        let enabledProviderSet = Set(displayEnabledProviders)
+        let refreshProviders = self.enabledProvidersForBackgroundWork()
+        let availableRefreshProviders = Set(self.enabledProviders())
         let refreshStartedAt = Date()
 
         await ProviderRefreshContext.$current.withValue(refreshPhase) {
@@ -456,11 +480,16 @@ final class UsageStore {
             }
 
             self.clearDisabledProviderState(enabledProviders: enabledProviderSet)
+            self.clearUnavailableProviderState(
+                displayEnabledProviders: enabledProviderSet,
+                availableProviders: availableRefreshProviders)
 
             await withTaskGroup(of: Void.self) { group in
-                for provider in enabledProviders {
+                for provider in refreshProviders {
                     group.addTask { await self.refreshProvider(provider) }
-                    group.addTask { await self.refreshStatus(provider) }
+                    if availableRefreshProviders.contains(provider) {
+                        group.addTask { await self.refreshStatus(provider) }
+                    }
                 }
                 group.addTask { await self.refreshCreditsIfNeeded(minimumSnapshotUpdatedAt: refreshStartedAt) }
             }
@@ -556,7 +585,7 @@ final class UsageStore {
             return
         }
 
-        let providers = self.enabledProvidersForDisplay()
+        let providers = self.enabledProvidersForBackgroundWork()
         self.tokenRefreshSequenceTask = Task(priority: .utility) { [weak self] in
             guard let self else { return }
             defer {
@@ -763,7 +792,7 @@ extension UsageStore {
         let ampCookieHeader = self.settings.ampCookieHeader
         let ollamaCookieSource = self.settings.ollamaCookieSource
         let ollamaCookieHeader = self.settings.ollamaCookieHeader
-        let processEnvironment = ProcessInfo.processInfo.environment
+        let processEnvironment = self.environmentBase
         let openRouterConfigToken = self.settings.providerConfig(for: .openrouter)?.sanitizedAPIKey
         let openRouterHasConfigToken = !(openRouterConfigToken?.trimmingCharacters(in: .whitespacesAndNewlines)
             .isEmpty ?? true)
@@ -862,7 +891,7 @@ extension UsageStore {
                     let source = resolution?.source.rawValue ?? "none"
                     return "WARP_API_KEY=\(hasAny ? "present" : "missing") source=\(source)"
                 case .gemini, .antigravity, .opencode, .opencodego, .factory, .copilot, .vertexai, .kilo, .kiro, .kimi,
-                     .kimik2, .jetbrains, .perplexity:
+                     .kimik2, .jetbrains, .perplexity, .abacus:
                     return unimplementedDebugLogMessages[provider] ?? "Debug log not yet implemented"
                 }
             }
@@ -884,7 +913,7 @@ extension UsageStore {
             let sourceMode = self.sourceMode(for: .claude)
             let snapshot = ProviderRegistry.makeSettingsSnapshot(settings: self.settings, tokenOverride: nil)
             let environment = ProviderRegistry.makeEnvironment(
-                base: ProcessInfo.processInfo.environment,
+                base: self.environmentBase,
                 provider: .claude,
                 settings: self.settings,
                 tokenOverride: nil)
