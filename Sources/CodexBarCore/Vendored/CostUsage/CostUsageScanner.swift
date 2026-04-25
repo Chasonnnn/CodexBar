@@ -240,7 +240,7 @@ enum CostUsageScanner {
             return self.loadOpenCodeDaily(range: range, now: now, options: options)
         case .zai, .gemini, .antigravity, .cursor, .opencodego, .alibaba, .factory, .copilot, .minimax, .kilo,
              .kiro, .kimi, .kimik2, .augment, .jetbrains, .amp, .ollama, .synthetic, .openrouter, .warp,
-             .perplexity, .abacus:
+             .perplexity, .abacus, .mistral:
             return emptyReport
         }
     }
