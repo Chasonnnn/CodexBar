@@ -61,7 +61,7 @@ struct OpenAIDashboardNavigationDelegateTests {
 
     @MainActor
     @Test
-    func `commit completes navigation successfully after grace period`() async {
+    func `commit completes navigation successfully after grace period`() {
         let webView = WKWebView()
         var result: Result<Void, Error>?
         let box = DelegateBox()
@@ -70,7 +70,8 @@ struct OpenAIDashboardNavigationDelegateTests {
         box.delegate?.webView(webView, didCommit: nil)
         #expect(result == nil)
 
-        let completed = await self.waitForResult { result }
+        box.delegate?.completePendingPostCommitForTesting()
+        let completed = result
         box.delegate = nil
 
         switch completed {

@@ -9,23 +9,10 @@ struct UsageFetcherRPCTests {
         let environment = try FakeCodexCLIEnvironment()
         defer { environment.cleanup() }
 
-        let previousCLIPath = ProcessInfo.processInfo.environment["CODEX_CLI_PATH"]
-        setenv("CODEX_CLI_PATH", environment.binaryURL.path, 1)
-        defer {
-            if let previousCLIPath {
-                setenv("CODEX_CLI_PATH", previousCLIPath, 1)
-            } else {
-                unsetenv("CODEX_CLI_PATH")
-            }
-        }
-
-        let previousTimeout = CodexRPCTestHooks.requestTimeoutOverride
-        CodexRPCTestHooks.requestTimeoutOverride = 0.1
-        defer { CodexRPCTestHooks.requestTimeoutOverride = previousTimeout }
-
         let clock = ContinuousClock()
         let start = clock.now
-        let snapshot = try await UsageFetcher().loadLatestUsage()
+        let snapshot = try await UsageFetcher(environment: environment.processEnvironment(requestTimeout: 0.1))
+            .loadLatestUsage()
         let elapsed = start.duration(to: clock.now)
 
         #expect(elapsed < .seconds(2))
@@ -38,23 +25,10 @@ struct UsageFetcherRPCTests {
         let environment = try FakeCodexCLIEnvironment()
         defer { environment.cleanup() }
 
-        let previousCLIPath = ProcessInfo.processInfo.environment["CODEX_CLI_PATH"]
-        setenv("CODEX_CLI_PATH", environment.binaryURL.path, 1)
-        defer {
-            if let previousCLIPath {
-                setenv("CODEX_CLI_PATH", previousCLIPath, 1)
-            } else {
-                unsetenv("CODEX_CLI_PATH")
-            }
-        }
-
-        let previousTimeout = CodexRPCTestHooks.requestTimeoutOverride
-        CodexRPCTestHooks.requestTimeoutOverride = 0.1
-        defer { CodexRPCTestHooks.requestTimeoutOverride = previousTimeout }
-
         let clock = ContinuousClock()
         let start = clock.now
-        let credits = try await UsageFetcher().loadLatestCredits()
+        let credits = try await UsageFetcher(environment: environment.processEnvironment(requestTimeout: 0.1))
+            .loadLatestCredits()
         let elapsed = start.duration(to: clock.now)
 
         #expect(elapsed < .seconds(2))
@@ -95,5 +69,12 @@ private struct FakeCodexCLIEnvironment {
 
     func cleanup() {
         try? FileManager.default.removeItem(at: self.rootURL)
+    }
+
+    func processEnvironment(requestTimeout: TimeInterval) -> [String: String] {
+        var environment = ProcessInfo.processInfo.environment
+        environment["CODEX_CLI_PATH"] = self.binaryURL.path
+        environment["CODEXBAR_RPC_REQUEST_TIMEOUT_SECONDS"] = "\(requestTimeout)"
+        return environment
     }
 }

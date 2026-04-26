@@ -65,6 +65,13 @@ final class NavigationDelegate: NSObject, WKNavigationDelegate {
         return false
     }
 
+    #if DEBUG
+    func completePendingPostCommitForTesting() {
+        guard self.postCommitTask != nil else { return }
+        self.completeOnce(.success(()))
+    }
+    #endif
+
     private func completeOnce(_ result: Result<Void, Error>) {
         guard !self.hasCompleted else { return }
         self.hasCompleted = true

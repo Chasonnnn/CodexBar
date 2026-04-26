@@ -394,12 +394,6 @@ private enum RPCWireError: Error, LocalizedError {
     }
 }
 
-#if DEBUG
-enum CodexRPCTestHooks {
-    nonisolated(unsafe) static var requestTimeoutOverride: TimeInterval?
-}
-#endif
-
 /// RPC helper used on background tasks; safe because we confine it to the owning task.
 private final class CodexRPCClient: @unchecked Sendable {
     private struct MessageEnvelope: @unchecked Sendable {
@@ -408,12 +402,16 @@ private final class CodexRPCClient: @unchecked Sendable {
 
     private static let log = CodexBarLog.logger(LogCategories.codexRPC)
     private static let defaultRequestTimeoutSeconds: TimeInterval = 5.0
+    #if DEBUG
+    private static let requestTimeoutOverrideEnvironmentKey = "CODEXBAR_RPC_REQUEST_TIMEOUT_SECONDS"
+    #endif
     private let process = Process()
     private let stdinPipe = Pipe()
     private let stdoutPipe = Pipe()
     private let stderrPipe = Pipe()
     private let stdoutLineStream: AsyncStream<Data>
     private let stdoutLineContinuation: AsyncStream<Data>.Continuation
+    private let requestTimeoutSeconds: TimeInterval
     private var nextID = 1
 
     private final class LineBuffer: @unchecked Sendable {
@@ -448,6 +446,7 @@ private final class CodexRPCClient: @unchecked Sendable {
         arguments: [String] = ["-s", "read-only", "-a", "untrusted", "app-server"],
         environment: [String: String] = ProcessInfo.processInfo.environment) throws
     {
+        self.requestTimeoutSeconds = Self.requestTimeoutSeconds(environment: environment)
         var stdoutContinuation: AsyncStream<Data>.Continuation!
         self.stdoutLineStream = AsyncStream<Data> { continuation in
             stdoutContinuation = continuation
@@ -567,7 +566,7 @@ private final class CodexRPCClient: @unchecked Sendable {
                 }
             }
             group.addTask {
-                let timeout = Self.requestTimeoutSeconds
+                let timeout = self.requestTimeoutSeconds
                 try await Task.sleep(for: .seconds(timeout))
                 throw RPCWireError.requestTimedOut(method, timeout)
             }
@@ -627,17 +626,16 @@ private final class CodexRPCClient: @unchecked Sendable {
         }
     }
 
-    private static var requestTimeoutSeconds: TimeInterval {
+    private static func requestTimeoutSeconds(environment: [String: String]) -> TimeInterval {
         #if DEBUG
-        guard let override = CodexRPCTestHooks.requestTimeoutOverride,
-              override.isFinite
-        else {
-            return self.defaultRequestTimeoutSeconds
+        if let rawOverride = environment[self.requestTimeoutOverrideEnvironmentKey],
+           let override = TimeInterval(rawOverride),
+           override.isFinite
+        {
+            return max(0.1, override)
         }
-        return max(0.1, override)
-        #else
-        self.defaultRequestTimeoutSeconds
         #endif
+        return self.defaultRequestTimeoutSeconds
     }
 }
 
