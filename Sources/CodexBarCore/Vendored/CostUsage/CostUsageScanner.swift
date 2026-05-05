@@ -240,7 +240,7 @@ enum CostUsageScanner {
             return self.loadOpenCodeDaily(range: range, now: now, options: options)
         case .zai, .gemini, .antigravity, .cursor, .opencodego, .alibaba, .factory, .copilot, .minimax, .kilo,
              .kiro, .kimi, .kimik2, .augment, .jetbrains, .amp, .ollama, .synthetic, .openrouter, .warp,
-             .perplexity, .abacus, .mistral:
+             .perplexity, .abacus, .mistral, .deepseek, .codebuff, .windsurf:
             return emptyReport
         }
     }
@@ -764,7 +764,7 @@ enum CostUsageScanner {
                         ?? info?["model_name"] as? String
                         ?? payload["model"] as? String
                         ?? obj["model"] as? String
-                    let model = modelFromInfo ?? currentModel ?? "gpt-5"
+                    let model = currentModel ?? modelFromInfo ?? "gpt-5"
 
                     func toInt(_ v: Any?) -> Int {
                         if let n = v as? NSNumber { return n.intValue }

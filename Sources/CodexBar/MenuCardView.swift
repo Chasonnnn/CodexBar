@@ -670,6 +670,7 @@ extension UsageMenuCardView.Model {
         let sourceLabel: String?
         let kiloAutoMode: Bool
         let hidePersonalInfo: Bool
+        let claudePeakHoursEnabled: Bool
         let weeklyPace: UsagePace?
         let now: Date
 
@@ -694,6 +695,7 @@ extension UsageMenuCardView.Model {
             sourceLabel: String? = nil,
             kiloAutoMode: Bool = false,
             hidePersonalInfo: Bool,
+            claudePeakHoursEnabled: Bool = true,
             weeklyPace: UsagePace? = nil,
             now: Date)
         {
@@ -717,6 +719,7 @@ extension UsageMenuCardView.Model {
             self.sourceLabel = sourceLabel
             self.kiloAutoMode = kiloAutoMode
             self.hidePersonalInfo = hidePersonalInfo
+            self.claudePeakHoursEnabled = claudePeakHoursEnabled
             self.weeklyPace = weeklyPace
             self.now = now
         }
@@ -747,12 +750,7 @@ extension UsageMenuCardView.Model {
             enabled: input.tokenCostUsageEnabled,
             snapshot: input.tokenSnapshot,
             error: input.tokenError)
-        let subtitle = Self.subtitle(
-            provider: input.provider,
-            snapshot: input.snapshot,
-            tokenSnapshot: input.tokenSnapshot,
-            isRefreshing: input.isRefreshing,
-            lastError: input.lastError)
+        let subtitle = Self.subtitle(input: input)
         let redacted = Self.redactedText(input: input, subtitle: subtitle)
         let placeholder = input.snapshot == nil
             && !input.isRefreshing
@@ -791,6 +789,11 @@ extension UsageMenuCardView.Model {
                 notes.append("Using CLI fallback")
             }
             return notes
+        }
+
+        if input.provider == .claude, input.claudePeakHoursEnabled {
+            let peakStatus = ClaudePeakHours.status(at: input.now)
+            return [peakStatus.label]
         }
 
         guard input.provider == .openrouter,
@@ -880,30 +883,24 @@ extension UsageMenuCardView.Model {
         return normalized.hasPrefix("auto top-up:")
     }
 
-    private static func subtitle(
-        provider: UsageProvider,
-        snapshot: UsageSnapshot?,
-        tokenSnapshot: CostUsageTokenSnapshot?,
-        isRefreshing: Bool,
-        lastError: String?) -> (text: String, style: SubtitleStyle)
-    {
-        if let lastError, !lastError.isEmpty {
+    private static func subtitle(input: Input) -> (text: String, style: SubtitleStyle) {
+        if let lastError = input.lastError, !lastError.isEmpty {
             // OpenCode may fail web cookie import while local cost tracking still works from opencode.db.
-            if !(provider == .opencode && snapshot == nil && tokenSnapshot != nil) {
+            if !(input.provider == .opencode && input.snapshot == nil && input.tokenSnapshot != nil) {
                 return (lastError.trimmingCharacters(in: .whitespacesAndNewlines), .error)
             }
         }
 
-        if isRefreshing, snapshot == nil, tokenSnapshot == nil {
+        if input.isRefreshing, input.snapshot == nil, input.tokenSnapshot == nil {
             return ("Refreshing...", .loading)
         }
 
-        if let updated = snapshot?.updatedAt {
-            return (UsageFormatter.updatedString(from: updated), .info)
+        if let updated = input.snapshot?.updatedAt {
+            return (UsageFormatter.updatedString(from: updated, now: input.now), .info)
         }
 
-        if provider == .opencode,
-           let updated = tokenSnapshot?.updatedAt
+        if input.provider == .opencode,
+           let updated = input.tokenSnapshot?.updatedAt
         {
             return ("Local cost · \(UsageFormatter.updatedString(from: updated))", .info)
         }
@@ -1079,7 +1076,7 @@ extension UsageMenuCardView.Model {
         {
             primaryResetText = openRouterQuotaDetail
         }
-        if input.provider == .warp || input.provider == .kilo,
+        if input.provider == .warp || input.provider == .kilo || input.provider == .deepseek,
            let detail = primary.resetDescription,
            !detail.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
         {
@@ -1091,7 +1088,7 @@ extension UsageMenuCardView.Model {
         {
             primaryDetailText = detail
         }
-        if input.provider == .warp || input.provider == .kilo, primary.resetsAt == nil {
+        if input.provider == .warp || input.provider == .kilo || input.provider == .deepseek, primary.resetsAt == nil {
             primaryResetText = nil
         }
         // Abacus: show credits as detail, compute pace on the primary monthly window

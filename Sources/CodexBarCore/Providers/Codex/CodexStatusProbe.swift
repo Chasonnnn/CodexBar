@@ -88,6 +88,7 @@ public struct CodexStatusProbe {
             // Retry only parser-level flakes with a short second attempt.
             switch error {
             case .parseFailed:
+                guard self.timeout > Self.parseRetryTimeoutSeconds else { throw error }
                 return try await self.runAndParse(
                     binary: resolved,
                     rows: 70,
@@ -216,7 +217,7 @@ public struct CodexStatusProbe {
             }
         } else {
             let runner = TTYCommandRunner()
-            let script = "/status\n"
+            let script = "/status"
             let result = try runner.run(
                 binary: binary,
                 send: script,
@@ -225,10 +226,16 @@ public struct CodexStatusProbe {
                     cols: cols,
                     timeout: timeout,
                     extraArgs: ["-s", "read-only", "-a", "untrusted"],
-                    baseEnvironment: self.environment))
+                    baseEnvironment: self.environment,
+                    codexStatusSettleAfterStatus: Self.statusSettleAfterStatus(for: timeout),
+                    forceCodexStatusMode: true))
             text = result.text
         }
         return try Self.parse(text: text)
+    }
+
+    private static func statusSettleAfterStatus(for timeout: TimeInterval) -> TimeInterval {
+        min(2.0, max(0.1, timeout - 0.2))
     }
 
     private static func containsUpdatePrompt(_ text: String) -> Bool {

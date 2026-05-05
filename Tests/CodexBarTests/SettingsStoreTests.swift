@@ -936,9 +936,12 @@ struct SettingsStoreTests {
             .synthetic,
             .warp,
             .openrouter,
+            .windsurf,
             .perplexity,
             .abacus,
             .mistral,
+            .deepseek,
+            .codebuff,
         ])
 
         // Move one provider; ensure it's persisted across instances.

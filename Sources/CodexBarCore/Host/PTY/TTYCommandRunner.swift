@@ -102,6 +102,8 @@ public struct TTYCommandRunner {
         public var stopOnURL: Bool
         public var stopOnSubstrings: [String]
         public var settleAfterStop: TimeInterval
+        public var codexStatusSettleAfterStatus: TimeInterval
+        public var forceCodexStatusMode: Bool
 
         public init(
             rows: UInt16 = 50,
@@ -116,7 +118,9 @@ public struct TTYCommandRunner {
             sendOnSubstrings: [String: String] = [:],
             stopOnURL: Bool = false,
             stopOnSubstrings: [String] = [],
-            settleAfterStop: TimeInterval = 0.25)
+            settleAfterStop: TimeInterval = 0.25,
+            codexStatusSettleAfterStatus: TimeInterval = 2.0,
+            forceCodexStatusMode: Bool = false)
         {
             self.rows = rows
             self.cols = cols
@@ -131,6 +135,8 @@ public struct TTYCommandRunner {
             self.stopOnURL = stopOnURL
             self.stopOnSubstrings = stopOnSubstrings
             self.settleAfterStop = settleAfterStop
+            self.codexStatusSettleAfterStatus = codexStatusSettleAfterStatus
+            self.forceCodexStatusMode = forceCodexStatusMode
         }
     }
 
@@ -523,7 +529,7 @@ public struct TTYCommandRunner {
 
         let deadline = Date().addingTimeInterval(options.timeout)
         let trimmed = script.trimmingCharacters(in: .whitespacesAndNewlines)
-        let isCodex = (binaryName == "codex")
+        let isCodex = (binaryName == "codex") || options.forceCodexStatusMode
         let isCodexStatus = isCodex && trimmed == "/status"
 
         var buffer = Data()
@@ -846,18 +852,21 @@ public struct TTYCommandRunner {
         }
 
         if sawCodexStatus {
-            let settleDeadline = Date().addingTimeInterval(2.0)
-            while Date() < settleDeadline {
-                let newData = readChunk()
-                let scanData = statusScanBuffer.append(newData)
-                if Date() >= nextCursorCheckAt,
-                   !scanData.isEmpty,
-                   scanData.range(of: cursorQuery) != nil
-                {
-                    try? send("\u{1b}[1;1R")
-                    nextCursorCheckAt = Date().addingTimeInterval(1.0)
+            let settle = max(0, options.codexStatusSettleAfterStatus)
+            if settle > 0 {
+                let settleDeadline = Date().addingTimeInterval(settle)
+                while Date() < settleDeadline {
+                    let newData = readChunk()
+                    let scanData = statusScanBuffer.append(newData)
+                    if Date() >= nextCursorCheckAt,
+                       !scanData.isEmpty,
+                       scanData.range(of: cursorQuery) != nil
+                    {
+                        try? send("\u{1b}[1;1R")
+                        nextCursorCheckAt = Date().addingTimeInterval(1.0)
+                    }
+                    usleep(100_000)
                 }
-                usleep(100_000)
             }
         }
 
