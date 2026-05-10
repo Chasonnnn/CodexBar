@@ -31,6 +31,8 @@ read_when:
 - Codex credits can add a separate “Buy Credits…” menu action.
 - Codex OpenAI web extras: code review remaining and usage breakdown render when dashboard data is attached.
 - Token accounts: optional account switcher bar or stacked account cards (up to 6) when multiple manual tokens exist.
+- Provider storage usage is opt-in from Advanced settings. When enabled, overview rows and provider detail cards can show
+  local provider-owned storage totals, with a submenu for path breakdowns and copyable paths.
 
 ## Pace tracking
 
@@ -42,10 +44,13 @@ Pace compares your actual usage against the expected consumption rate for the cu
 
 When usage is in deficit, the right-hand label shows an estimated "Runs out in …" countdown. When usage will last until the reset, it shows "Lasts until reset".
 
-Pace is currently calculated for supported Codex, Claude, OpenCode, and Abacus windows and is hidden when less than 3% of the window has elapsed.
+Pace is calculated for any provider window with enough reset timing data and is hidden when less than 3% of the
+window has elapsed.
 
 ## Preferences notes
 - Advanced: “Disable Keychain access” turns off browser cookie import; paste Cookie headers manually in Providers.
+- Advanced: “Show provider storage usage” enables background scans of known provider-owned local paths; CodexBar only
+  reports sizes and cleanup ideas, it does not delete files.
 - Display: “Overview tab providers” controls which providers appear in Merge Icons → Overview (up to 3).
 - If no providers are selected for Overview, the Overview tab is hidden.
 - Providers → Claude: “Avoid Keychain prompts” uses the prompt-free Security CLI reader when available.
